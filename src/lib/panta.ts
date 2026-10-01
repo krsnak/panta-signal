@@ -147,6 +147,45 @@ function toNumber(value: string | number | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function normalizeStatus(value: string | undefined, phase: string | undefined) {
+  const raw = value?.trim() || "";
+  if (raw === "secondary_active") return "secondary";
+  if (raw) return raw;
+  return phase?.trim() || "unknown";
+}
+
+function hasUsefulDetail(row: CatalogMarket) {
+  const hasText = Boolean(row.title?.trim() || row.description?.trim());
+  const hasPrice =
+    toNumber(row.yesPrice) !== null ||
+    toNumber(row.noPrice) !== null ||
+    toNumber(row.primaryYesPrice) !== null ||
+    toNumber(row.primaryNoPrice) !== null ||
+    toNumber(row.secondaryYesPrice) !== null ||
+    toNumber(row.secondaryNoPrice) !== null;
+  const hasVolume = (toNumber(row.volumeUsdc) ?? 0) > 0;
+  return hasText && (hasPrice || hasVolume);
+}
+
+async function fetchMarketDetailWithRetry(market: CatalogMarket, attempts = 3) {
+  let last = market;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const detail = await pantaFetch<CatalogMarket>(
+        `markets/${encodeURIComponent(market.marketId)}/`,
+      );
+      last = detail;
+      if (hasUsefulDetail(detail)) return detail;
+    } catch {
+      // Retry briefly; catalog data remains the final fallback.
+    }
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+    }
+  }
+  return last;
+}
+
 function normalizeMarket(row: CatalogMarket, fallback?: CatalogMarket): PantaMarket {
   const yes =
     toNumber(row.yesPrice) ??
@@ -164,11 +203,11 @@ function normalizeMarket(row: CatalogMarket, fallback?: CatalogMarket): PantaMar
       fallback?.title?.trim() ||
       row.description?.trim() ||
       fallback?.description?.trim() ||
-      "Untitled market",
+      `Market ${row.marketId.slice(0, 8)}…`,
     description: row.description?.trim() || fallback?.description?.trim() || "",
     category: row.category?.trim() || fallback?.category?.trim() || "other",
     phase: row.phase?.trim() || fallback?.phase?.trim() || "unknown",
-    status: row.status?.trim() || fallback?.status?.trim() || "unknown",
+    status: normalizeStatus(row.status ?? fallback?.status, row.phase ?? fallback?.phase),
     yesProbability: yes,
     noProbability: no,
     volumeUsdc: toNumber(row.volumeUsdc) ?? toNumber(fallback?.volumeUsdc) ?? 0,
@@ -319,8 +358,15 @@ async function getCategories() {
 }
 
 export async function getMarketDetail(marketId: string): Promise<PantaMarket> {
-  const row = await pantaFetch<CatalogMarket>(`markets/${encodeURIComponent(marketId)}/`);
-  return normalizeMarket(row);
+  const detail = await pantaFetch<CatalogMarket>(`markets/${encodeURIComponent(marketId)}/`);
+
+  if (hasUsefulDetail(detail)) {
+    return normalizeMarket(detail);
+  }
+
+  const catalog = await pantaFetch<MarketListResponse>("markets/?limit=50");
+  const fallback = (catalog.items ?? []).find((market) => market.marketId === marketId);
+  return normalizeMarket(detail, fallback);
 }
 
 export async function getMarketTrades(marketId: string, limit = 50): Promise<PantaTrade[]> {
@@ -389,15 +435,16 @@ export async function getMarketSnapshot(options?: {
       .slice(0, limit);
 
     const detailed: Array<{ detail: CatalogMarket; fallback: CatalogMarket }> = [];
-    for (const market of selected) {
-      try {
-        const detail = await pantaFetch<CatalogMarket>(
-          `markets/${encodeURIComponent(market.marketId)}/`,
-        );
-        detailed.push({ detail, fallback: market });
-      } catch {
-        detailed.push({ detail: market, fallback: market });
-      }
+    const batchSize = 3;
+    for (let start = 0; start < selected.length; start += batchSize) {
+      const batch = selected.slice(start, start + batchSize);
+      const results = await Promise.all(
+        batch.map(async (market) => ({
+          detail: await fetchMarketDetailWithRetry(market),
+          fallback: market,
+        })),
+      );
+      detailed.push(...results);
     }
 
     return {
