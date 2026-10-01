@@ -45,22 +45,22 @@ Browser
       -> Panta API client wrapper
           -> Panta API
 
-Wallet flow (next)
-  Panta transaction builder
+Wallet flow
+  Panta quote/build
       -> user's Solana wallet signature
           -> Solana RPC
-              -> verification / refreshed positions
+              -> Panta submit/verify
 ```
 
 ## Next implementation slices
 
 1. optionally connect an external LLM provider for generated insight; the grounding layer is already implemented
 2. replace local history storage with durable storage before multi-instance production deployment
-3. deploy and record a concise working demo
+3. record a concise working demo
 
 ## Submission checklist
 
-- [ ] working deployed demo
+- [x] working deployed demo
 - [x] meaningful live Panta API integration
 - [x] market discovery and market detail
 - [x] read-only wallet positions
