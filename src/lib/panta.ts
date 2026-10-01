@@ -147,7 +147,7 @@ function toNumber(value: string | number | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function normalizeMarket(row: CatalogMarket): PantaMarket {
+function normalizeMarket(row: CatalogMarket, fallback?: CatalogMarket): PantaMarket {
   const yes =
     toNumber(row.yesPrice) ??
     toNumber(row.primaryYesPrice) ??
@@ -159,15 +159,20 @@ function normalizeMarket(row: CatalogMarket): PantaMarket {
 
   return {
     id: row.marketId,
-    title: row.title?.trim() || "Untitled market",
-    description: row.description?.trim() || "",
-    category: row.category?.trim() || "other",
-    phase: row.phase?.trim() || "unknown",
-    status: row.status?.trim() || "unknown",
+    title:
+      row.title?.trim() ||
+      fallback?.title?.trim() ||
+      row.description?.trim() ||
+      fallback?.description?.trim() ||
+      "Untitled market",
+    description: row.description?.trim() || fallback?.description?.trim() || "",
+    category: row.category?.trim() || fallback?.category?.trim() || "other",
+    phase: row.phase?.trim() || fallback?.phase?.trim() || "unknown",
+    status: row.status?.trim() || fallback?.status?.trim() || "unknown",
     yesProbability: yes,
     noProbability: no,
-    volumeUsdc: toNumber(row.volumeUsdc) ?? 0,
-    imageUrl: row.images?.[0] ?? null,
+    volumeUsdc: toNumber(row.volumeUsdc) ?? toNumber(fallback?.volumeUsdc) ?? 0,
+    imageUrl: row.images?.[0] ?? fallback?.images?.[0] ?? null,
   };
 }
 
@@ -383,19 +388,21 @@ export async function getMarketSnapshot(options?: {
       })
       .slice(0, limit);
 
-    const detailed = await Promise.all(
-      selected.map(async (market) => {
-        try {
-          return await pantaFetch<CatalogMarket>(`markets/${encodeURIComponent(market.marketId)}/`);
-        } catch {
-          return market;
-        }
-      }),
-    );
+    const detailed: Array<{ detail: CatalogMarket; fallback: CatalogMarket }> = [];
+    for (const market of selected) {
+      try {
+        const detail = await pantaFetch<CatalogMarket>(
+          `markets/${encodeURIComponent(market.marketId)}/`,
+        );
+        detailed.push({ detail, fallback: market });
+      } catch {
+        detailed.push({ detail: market, fallback: market });
+      }
+    }
 
     return {
       source: "panta",
-      markets: detailed.map(normalizeMarket),
+      markets: detailed.map(({ detail, fallback }) => normalizeMarket(detail, fallback)),
       categories,
       error: null,
     };
