@@ -58,6 +58,7 @@ export default async function Home({ searchParams }: PageProps) {
     query: params.q,
     category: params.category,
     status: params.status,
+    limit: 20,
   });
   if (snapshot.source === "panta") {
     await recordMarketSnapshots(snapshot.markets);
