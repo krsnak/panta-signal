@@ -1,14 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getMarketSnapshot, getWalletPositions } from "@/lib/panta";
+import { getMarketSnapshot } from "@/lib/panta";
 import { getTopMovers, recordMarketSnapshots } from "@/lib/history";
+import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 
 type PageProps = {
   searchParams: Promise<{
     q?: string;
     category?: string;
     status?: string;
-    wallet?: string;
   }>;
 };
 
@@ -64,16 +64,6 @@ export default async function Home({ searchParams }: PageProps) {
     await recordMarketSnapshots(snapshot.markets);
   }
   const topMovers = await getTopMovers(snapshot.markets);
-  const wallet = params.wallet?.trim() || "";
-  let positions = null;
-  let walletError = null;
-  if (wallet) {
-    try {
-      positions = await getWalletPositions(wallet);
-    } catch (error) {
-      walletError = error instanceof Error ? error.message : "Unable to load wallet positions";
-    }
-  }
   const completeMarkets = snapshot.markets.filter(
     (market) =>
       !market.title.startsWith("Market ") &&
@@ -405,55 +395,8 @@ export default async function Home({ searchParams }: PageProps) {
               <h2 className="mt-2 text-2xl font-semibold">Solana positions</h2>
               <p className="mt-2 text-sm text-white/45">Read-only Panta holdings. No seed phrase or private key is requested.</p>
             </div>
-            <form action="/" className="flex w-full max-w-xl gap-2">
-              <input type="hidden" name="q" value={params.q || ""} />
-              <input type="hidden" name="category" value={params.category || ""} />
-              <input type="hidden" name="status" value={params.status || ""} />
-              <input
-                name="wallet"
-                defaultValue={wallet}
-                placeholder="Solana wallet address"
-                className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none placeholder:text-white/30"
-              />
-              <button className="rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm font-medium text-emerald-200">
-                Load
-              </button>
-            </form>
+            <WalletPositionsLookup />
           </div>
-
-          {walletError && (
-            <div className="mt-5 rounded-xl border border-rose-300/20 bg-rose-300/[0.05] p-4 text-sm text-rose-100">
-              {walletError}
-            </div>
-          )}
-
-          {positions && (
-            <div className="mt-5">
-              {positions.length === 0 ? (
-                <div className="rounded-xl border border-white/10 bg-black/15 p-5 text-sm text-white/45">
-                  No Panta positions found for this wallet.
-                </div>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {positions.map((position, index) => (
-                    <div
-                      key={`${position.marketId}-${position.side}-${index}`}
-                      className="rounded-xl border border-white/10 bg-black/15 p-4"
-                    >
-                      <div className="flex items-center justify-between gap-4">
-                        <span className={position.side === "yes" ? "font-medium text-emerald-300" : "font-medium text-rose-300"}>
-                          {position.side.toUpperCase()}
-                        </span>
-                        <span className="text-xs text-white/35">{position.phase}</span>
-                      </div>
-                      <div className="mt-3 text-2xl font-semibold">{position.shares.toLocaleString()} shares</div>
-                      <div className="mt-2 truncate text-xs text-white/35">{position.marketId}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </section>
 
         <section className="mt-5 grid gap-5 md:grid-cols-3">

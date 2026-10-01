@@ -20,7 +20,9 @@ type PageProps = {
 };
 
 function pct(value: number | null) {
-  return value === null ? "—" : `${Math.round(value * 100)}%`;
+  if (value === null) return "—";
+  if (value === 0 || value === 1) return `${value * 100}%`;
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 function formatDate(value: number | null) {
@@ -50,26 +52,38 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   const fallback = await searchParams;
   const decodedMarketId = decodeURIComponent(marketId);
   const [market, trades] = await Promise.all([
-    getMarketDetail(decodedMarketId),
-    getMarketTrades(decodedMarketId, 50).catch(() => []),
+    getMarketDetail(decodedMarketId).catch(() => null),
+    getMarketTrades(decodedMarketId, 20).catch(() => []),
   ]);
   const fallbackYes = parseNumber(fallback.yes);
   const fallbackNo = parseNumber(fallback.no);
   const fallbackVolume = parseNumber(fallback.volume);
+  const baseMarket = market ?? {
+    id: decodedMarketId,
+    title: fallback.title || `Market ${decodedMarketId.slice(0, 8)}…`,
+    description: fallback.description || "",
+    category: fallback.category || "other",
+    phase: fallback.phase || "unknown",
+    status: fallback.status || "unknown",
+    yesProbability: fallbackYes,
+    noProbability: fallbackNo,
+    volumeUsdc: fallbackVolume || 0,
+    imageUrl: fallback.image || null,
+  };
   const resolvedMarket = {
-    ...market,
+    ...baseMarket,
     title:
-      market.title.startsWith("Market ") && fallback.title
+      baseMarket.title.startsWith("Market ") && fallback.title
         ? fallback.title
-        : market.title,
-    description: market.description || fallback.description || "",
-    category: market.category === "other" && fallback.category ? fallback.category : market.category,
-    phase: market.phase === "unknown" && fallback.phase ? fallback.phase : market.phase,
-    status: market.status === "unknown" && fallback.status ? fallback.status : market.status,
-    yesProbability: market.yesProbability ?? fallbackYes,
-    noProbability: market.noProbability ?? fallbackNo,
-    volumeUsdc: market.volumeUsdc || fallbackVolume || 0,
-    imageUrl: market.imageUrl || fallback.image || null,
+        : baseMarket.title,
+    description: baseMarket.description || fallback.description || "",
+    category: baseMarket.category === "other" && fallback.category ? fallback.category : baseMarket.category,
+    phase: baseMarket.phase === "unknown" && fallback.phase ? fallback.phase : baseMarket.phase,
+    status: baseMarket.status === "unknown" && fallback.status ? fallback.status : baseMarket.status,
+    yesProbability: baseMarket.yesProbability ?? fallbackYes,
+    noProbability: baseMarket.noProbability ?? fallbackNo,
+    volumeUsdc: baseMarket.volumeUsdc || fallbackVolume || 0,
+    imageUrl: baseMarket.imageUrl || fallback.image || null,
   };
   await recordMarketSnapshots([resolvedMarket]);
   const insight = await getMarketInsight(resolvedMarket);

@@ -99,6 +99,25 @@ type PositionsResponse = {
 
 const DEFAULT_BASE_URL = "https://live-api.panta.market/api/v1/";
 
+type PantaFetchOptions = {
+  timeoutMs?: number;
+  retries?: number;
+  revalidate?: number;
+  noStore?: boolean;
+};
+
+class PantaApiError extends Error {
+  status: number;
+  code: string | null;
+
+  constructor(message: string, status: number, code: string | null = null) {
+    super(message);
+    this.name = "PantaApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 const sampleMarkets: PantaMarket[] = [
   {
     id: "btc-150k",
@@ -168,25 +187,6 @@ function hasUsefulDetail(row: CatalogMarket) {
   return hasText && (hasPrice || hasVolume);
 }
 
-async function fetchMarketDetailWithRetry(market: CatalogMarket, attempts = 3) {
-  let last = market;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      const detail = await pantaFetch<CatalogMarket>(
-        `markets/${encodeURIComponent(market.marketId)}/`,
-      );
-      last = detail;
-      if (hasUsefulDetail(detail)) return detail;
-    } catch {
-      // Retry briefly; catalog data remains the final fallback.
-    }
-    if (attempt < attempts - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
-    }
-  }
-  return last;
-}
-
 function normalizeMarket(row: CatalogMarket, fallback?: CatalogMarket): PantaMarket {
   const yes =
     toNumber(row.yesPrice) ??
@@ -216,30 +216,91 @@ function normalizeMarket(row: CatalogMarket, fallback?: CatalogMarket): PantaMar
   };
 }
 
-async function pantaFetch<T>(path: string): Promise<T> {
+function errorMessageFromBody(body: unknown) {
+  if (!body || typeof body !== "object") return "";
+  const value = body as {
+    code?: unknown;
+    message?: unknown;
+    detail?: unknown;
+    field?: unknown;
+    fields?: unknown;
+  };
+  if (typeof value.message === "string" && value.message.trim()) return value.message.trim();
+  if (typeof value.detail === "string" && value.detail.trim()) return value.detail.trim();
+  if (typeof value.field === "string" && value.field.trim()) return value.field.trim();
+  if (value.fields && typeof value.fields === "object") {
+    try {
+      return JSON.stringify(value.fields);
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
+
+async function pantaFetch<T>(path: string, options: PantaFetchOptions = {}): Promise<T> {
   const { apiKey, baseUrl } = getConfig();
   if (!apiKey) throw new Error("Missing PANTA_API_KEY");
+  const timeoutMs = options.timeoutMs ?? 5000;
+  const retries = Math.max(0, options.retries ?? 0);
+  const url = new URL(path.replace(/^\//, ""), baseUrl);
 
-  const response = await fetch(new URL(path.replace(/^\//, ""), baseUrl), {
-    headers: {
-      Accept: "application/json",
-      "X-Api-Key": apiKey,
-    },
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    let detail = "";
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      const body = (await response.json()) as { code?: string; detail?: string };
-      detail = body.code || body.detail || "";
-    } catch {
-      // Keep status-only error.
+      const response = await fetch(url, {
+        headers: {
+          Accept: "application/json",
+          "X-Api-Key": apiKey,
+        },
+        ...(options.noStore
+          ? { cache: "no-store" as const }
+          : options.revalidate !== undefined
+            ? { next: { revalidate: options.revalidate } }
+            : { cache: "no-store" as const }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+
+      if (response.ok) return (await response.json()) as T;
+
+      let body: unknown = null;
+      try {
+        body = await response.json();
+      } catch {
+        // Cloudflare / proxy failures may return HTML.
+      }
+      const parsed = body as { code?: unknown } | null;
+      const code = typeof parsed?.code === "string" ? parsed.code : null;
+      const detail = errorMessageFromBody(body);
+      const retryable = response.status === 429 || response.status >= 500;
+
+      if (retryable && attempt < retries) {
+        const retryAfter = Number(response.headers.get("retry-after"));
+        const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+          ? retryAfter * 1000
+          : 250 * 2 ** attempt;
+        await new Promise((resolve) => setTimeout(resolve, Math.min(waitMs, 2000)));
+        continue;
+      }
+
+      throw new PantaApiError(
+        `Panta API ${response.status}${code ? `: ${code}` : ""}${detail ? ` — ${detail}` : ""}`,
+        response.status,
+        code,
+      );
+    } catch (error) {
+      if (error instanceof PantaApiError) throw error;
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** attempt));
+        continue;
+      }
+      if (error instanceof DOMException && error.name === "TimeoutError") {
+        throw new Error(`Panta API timeout after ${timeoutMs} ms`);
+      }
+      throw error;
     }
-    throw new Error(`Panta API ${response.status}${detail ? `: ${detail}` : ""}`);
   }
 
-  return (await response.json()) as T;
+  throw new Error("Panta API request failed");
 }
 
 async function pantaPost<T>(path: string, body: unknown): Promise<T> {
@@ -255,13 +316,17 @@ async function pantaPost<T>(path: string, body: unknown): Promise<T> {
     },
     body: JSON.stringify(body),
     cache: "no-store",
+    signal: AbortSignal.timeout(10000),
   });
 
   if (!response.ok) {
     let detail = "";
     try {
-      const parsed = (await response.json()) as { code?: string; detail?: string };
-      detail = parsed.code || parsed.detail || "";
+      const parsed = (await response.json()) as unknown;
+      const code = parsed && typeof parsed === "object" && typeof (parsed as { code?: unknown }).code === "string"
+        ? (parsed as { code: string }).code
+        : "";
+      detail = code || errorMessageFromBody(parsed);
     } catch {
       // Keep status-only error.
     }
@@ -354,25 +419,39 @@ export async function verifyPrimaryBuy(input: {
 }
 
 async function getCategories() {
-  const result = await pantaFetch<CategoriesResponse>("categories/");
+  const result = await pantaFetch<CategoriesResponse>("categories/", {
+    timeoutMs: 2500,
+    retries: 1,
+    revalidate: 300,
+  });
   return Array.isArray(result.categories) ? result.categories : [];
 }
 
 export async function getMarketDetail(marketId: string): Promise<PantaMarket> {
-  const detail = await pantaFetch<CatalogMarket>(`markets/${encodeURIComponent(marketId)}/`);
-
-  if (hasUsefulDetail(detail)) {
-    return normalizeMarket(detail);
+  try {
+    const detail = await pantaFetch<CatalogMarket>(
+      `markets/${encodeURIComponent(marketId)}/`,
+      { timeoutMs: 3500, retries: 1, revalidate: 10 },
+    );
+    if (hasUsefulDetail(detail)) return normalizeMarket(detail);
+  } catch {
+    // Fall through to the catalog row, which remains useful even if live RPC is unavailable.
   }
 
-  const catalog = await pantaFetch<MarketListResponse>("markets/?limit=50");
+  const catalog = await pantaFetch<MarketListResponse>("markets/?limit=50", {
+    timeoutMs: 2500,
+    retries: 1,
+    revalidate: 30,
+  });
   const fallback = (catalog.items ?? []).find((market) => market.marketId === marketId);
-  return normalizeMarket(detail, fallback);
+  if (!fallback) throw new Error("Panta market metadata is temporarily unavailable");
+  return normalizeMarket(fallback, fallback);
 }
 
 export async function getMarketTrades(marketId: string, limit = 50): Promise<PantaTrade[]> {
   const result = await pantaFetch<MarketTradesResponse>(
     `markets/${encodeURIComponent(marketId)}/trades/?limit=${Math.min(Math.max(limit, 1), 200)}`,
+    { timeoutMs: 3500, retries: 1, revalidate: 5 },
   );
   return (result.items ?? []).map((trade) => ({
     id: String(trade.id ?? ""),
@@ -396,6 +475,7 @@ export async function getWalletPositions(wallet: string): Promise<PantaPosition[
   }
   const result = await pantaFetch<PositionsResponse>(
     `positions/?wallet=${encodeURIComponent(trimmed)}`,
+    { timeoutMs: 7000, retries: 1, noStore: true },
   );
   return (result.positions ?? []).map((position) => ({
     marketId: position.marketId ?? "",
@@ -428,12 +508,23 @@ export async function getMarketSnapshot(options?: {
     if (category) params.set("category", category);
     if (status) params.set("status", status);
 
-    const [catalog, categories] = await Promise.all([
-      pantaFetch<MarketListResponse>(`markets/?${params.toString()}`),
-      getCategories(),
-    ]);
+    const catalog = await pantaFetch<MarketListResponse>(`markets/?${params.toString()}`, {
+      timeoutMs: 3000,
+      retries: 1,
+      revalidate: 30,
+    });
+    const categories = await getCategories().catch(() =>
+      Array.from(
+        new Set(
+          (catalog.items ?? [])
+            .map((market) => market.category?.trim())
+            .filter((value): value is string => Boolean(value)),
+        ),
+      ),
+    );
 
     const selected = (catalog.items ?? [])
+      .filter((market) => Boolean(market.title?.trim()))
       .filter((market) => {
         if (!query) return true;
         const haystack = `${market.title ?? ""} ${market.description ?? ""} ${market.category ?? ""}`.toLowerCase();
@@ -441,22 +532,37 @@ export async function getMarketSnapshot(options?: {
       })
       .slice(0, limit);
 
-    const detailed: Array<{ detail: CatalogMarket; fallback: CatalogMarket }> = [];
-    const batchSize = 3;
-    for (let start = 0; start < selected.length; start += batchSize) {
-      const batch = selected.slice(start, start + batchSize);
-      const results = await Promise.all(
-        batch.map(async (market) => ({
-          detail: await fetchMarketDetailWithRetry(market),
-          fallback: market,
-        })),
-      );
-      detailed.push(...results);
-    }
+    const byVolume = [...selected].sort(
+      (a, b) => (toNumber(b.volumeUsdc) ?? 0) - (toNumber(a.volumeUsdc) ?? 0),
+    );
+    const enrichmentCandidates = [
+      ...byVolume.filter((market) => market.phase !== "resolved" && (toNumber(market.volumeUsdc) ?? 0) > 0).slice(0, 5),
+      ...selected.filter((market) => market.phase !== "resolved" && (toNumber(market.volumeUsdc) ?? 0) === 0).slice(0, 2),
+      ...byVolume.filter((market) => market.phase === "resolved").slice(0, 3),
+    ];
+    const uniqueCandidates = Array.from(
+      new Map(enrichmentCandidates.map((market) => [market.marketId, market])).values(),
+    );
+    const detailEntries = await Promise.all(
+      uniqueCandidates.map(async (market) => {
+        try {
+          const detail = await pantaFetch<CatalogMarket>(
+            `markets/${encodeURIComponent(market.marketId)}/`,
+            { timeoutMs: 2500, retries: 0, revalidate: 10 },
+          );
+          return [market.marketId, detail] as const;
+        } catch {
+          return [market.marketId, market] as const;
+        }
+      }),
+    );
+    const detailById = new Map(detailEntries);
 
     return {
       source: "panta",
-      markets: detailed.map(({ detail, fallback }) => normalizeMarket(detail, fallback)),
+      markets: selected.map((market) =>
+        normalizeMarket(detailById.get(market.marketId) ?? market, market),
+      ),
       categories,
       error: null,
     };
