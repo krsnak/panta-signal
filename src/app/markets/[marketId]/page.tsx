@@ -5,6 +5,16 @@ import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
 
 type PageProps = {
   params: Promise<{ marketId: string }>;
+  searchParams: Promise<{
+    title?: string;
+    description?: string;
+    category?: string;
+    phase?: string;
+    status?: string;
+    yes?: string;
+    no?: string;
+    volume?: string;
+  }>;
 };
 
 function pct(value: number | null) {
@@ -27,15 +37,39 @@ function historyPolyline(points: Array<{ yesProbability: number }>) {
     .join(" ");
 }
 
-export default async function MarketDetailPage({ params }: PageProps) {
+function parseNumber(value: string | undefined) {
+  if (value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export default async function MarketDetailPage({ params, searchParams }: PageProps) {
   const { marketId } = await params;
+  const fallback = await searchParams;
   const decodedMarketId = decodeURIComponent(marketId);
   const [market, trades] = await Promise.all([
     getMarketDetail(decodedMarketId),
     getMarketTrades(decodedMarketId, 50).catch(() => []),
   ]);
-  await recordMarketSnapshots([market]);
-  const insight = await getMarketInsight(market);
+  const fallbackYes = parseNumber(fallback.yes);
+  const fallbackNo = parseNumber(fallback.no);
+  const fallbackVolume = parseNumber(fallback.volume);
+  const resolvedMarket = {
+    ...market,
+    title:
+      market.title.startsWith("Market ") && fallback.title
+        ? fallback.title
+        : market.title,
+    description: market.description || fallback.description || "",
+    category: market.category === "other" && fallback.category ? fallback.category : market.category,
+    phase: market.phase === "unknown" && fallback.phase ? fallback.phase : market.phase,
+    status: market.status === "unknown" && fallback.status ? fallback.status : market.status,
+    yesProbability: market.yesProbability ?? fallbackYes,
+    noProbability: market.noProbability ?? fallbackNo,
+    volumeUsdc: market.volumeUsdc || fallbackVolume || 0,
+  };
+  await recordMarketSnapshots([resolvedMarket]);
+  const insight = await getMarketInsight(resolvedMarket);
 
   return (
     <main className="min-h-screen bg-[#07110d] text-white">
@@ -44,25 +78,25 @@ export default async function MarketDetailPage({ params }: PageProps) {
 
         <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.035] p-6 md:p-8">
           <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-white/55">{market.category}</span>
-            <span className="uppercase tracking-wider text-white/35">{market.phase}</span>
-            <span className="uppercase tracking-wider text-white/35">{market.status}</span>
+            <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-white/55">{resolvedMarket.category}</span>
+            <span className="uppercase tracking-wider text-white/35">{resolvedMarket.phase}</span>
+            <span className="uppercase tracking-wider text-white/35">{resolvedMarket.status}</span>
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">{market.title}</h1>
-          {market.description && <p className="mt-4 max-w-3xl leading-7 text-white/55">{market.description}</p>}
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">{resolvedMarket.title}</h1>
+          {resolvedMarket.description && <p className="mt-4 max-w-3xl leading-7 text-white/55">{resolvedMarket.description}</p>}
 
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.06] p-5">
               <div className="text-xs uppercase tracking-wider text-white/35">YES</div>
-              <div className="mt-2 text-4xl font-semibold text-emerald-200">{pct(market.yesProbability)}</div>
+              <div className="mt-2 text-4xl font-semibold text-emerald-200">{pct(resolvedMarket.yesProbability)}</div>
             </div>
             <div className="rounded-2xl border border-rose-300/15 bg-rose-300/[0.05] p-5">
               <div className="text-xs uppercase tracking-wider text-white/35">NO</div>
-              <div className="mt-2 text-4xl font-semibold text-rose-200">{pct(market.noProbability)}</div>
+              <div className="mt-2 text-4xl font-semibold text-rose-200">{pct(resolvedMarket.noProbability)}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-5">
               <div className="text-xs uppercase tracking-wider text-white/35">Volume</div>
-              <div className="mt-2 text-3xl font-semibold">${market.volumeUsdc.toLocaleString()}</div>
+              <div className="mt-2 text-3xl font-semibold">${resolvedMarket.volumeUsdc.toLocaleString()}</div>
             </div>
           </div>
         </section>
@@ -107,7 +141,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
         </section>
 
         <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6">
-          <PrimaryBuyPanel marketId={market.id} enabled={market.phase === "primary"} />
+          <PrimaryBuyPanel marketId={resolvedMarket.id} enabled={resolvedMarket.phase === "primary"} />
         </section>
 
         <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6">

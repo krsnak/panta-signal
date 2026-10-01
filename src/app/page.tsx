@@ -23,6 +23,30 @@ function money(value: number) {
   }).format(value);
 }
 
+function marketDetailHref(market: {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  phase: string;
+  status: string;
+  yesProbability: number | null;
+  noProbability: number | null;
+  volumeUsdc: number;
+}) {
+  const params = new URLSearchParams({
+    title: market.title,
+    category: market.category,
+    phase: market.phase,
+    status: market.status,
+    volume: String(market.volumeUsdc),
+  });
+  if (market.description) params.set("description", market.description);
+  if (market.yesProbability !== null) params.set("yes", String(market.yesProbability));
+  if (market.noProbability !== null) params.set("no", String(market.noProbability));
+  return `/markets/${encodeURIComponent(market.id)}?${params.toString()}`;
+}
+
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
   const snapshot = await getMarketSnapshot({
@@ -124,7 +148,7 @@ export default async function Home({ searchParams }: PageProps) {
                     <span>{money(market.volumeUsdc)} volume</span>
                   </div>
                   <Link
-                    href={`/markets/${encodeURIComponent(market.id)}`}
+                    href={marketDetailHref(market)}
                     className="mt-5 inline-flex text-sm font-medium text-emerald-300 hover:text-emerald-200"
                   >
                     Open market detail →
@@ -154,7 +178,7 @@ export default async function Home({ searchParams }: PageProps) {
               {topMovers.map((mover) => (
                 <Link
                   key={mover.market.id}
-                  href={`/markets/${encodeURIComponent(mover.market.id)}`}
+                  href={marketDetailHref(mover.market)}
                   className="rounded-2xl border border-white/10 bg-black/15 p-5 transition hover:border-emerald-300/30"
                 >
                   <div className="flex items-start justify-between gap-4">
