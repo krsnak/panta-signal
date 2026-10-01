@@ -1,4 +1,5 @@
 import "server-only";
+import { PublicKey } from "@solana/web3.js";
 
 export type PantaMarket = {
   id: string;
@@ -387,8 +388,14 @@ export async function getMarketTrades(marketId: string, limit = 50): Promise<Pan
 }
 
 export async function getWalletPositions(wallet: string): Promise<PantaPosition[]> {
+  const trimmed = wallet.trim();
+  try {
+    new PublicKey(trimmed);
+  } catch {
+    throw new Error("Invalid Solana wallet address");
+  }
   const result = await pantaFetch<PositionsResponse>(
-    `positions/?wallet=${encodeURIComponent(wallet.trim())}`,
+    `positions/?wallet=${encodeURIComponent(trimmed)}`,
   );
   return (result.positions ?? []).map((position) => ({
     marketId: position.marketId ?? "",

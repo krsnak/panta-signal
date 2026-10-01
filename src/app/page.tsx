@@ -13,7 +13,9 @@ type PageProps = {
 };
 
 function pct(value: number | null) {
-  return value === null ? "—" : `${Math.round(value * 100)}%`;
+  if (value === null) return "—";
+  if (value === 0 || value === 1) return `${value * 100}%`;
+  return `${(value * 100).toFixed(1)}%`;
 }
 
 function money(value: number) {
@@ -77,78 +79,121 @@ export default async function Home({ searchParams }: PageProps) {
       market.yesProbability !== null &&
       market.noProbability !== null,
   );
+  const tradingMarkets = completeMarkets
+    .filter((market) => market.phase !== "resolved" && market.volumeUsdc > 0)
+    .sort((a, b) => b.volumeUsdc - a.volumeUsdc);
+  const initialMarkets = completeMarkets.filter(
+    (market) => market.phase !== "resolved" && market.volumeUsdc === 0,
+  );
+  const resolvedMarkets = completeMarkets.filter((market) => market.phase === "resolved");
   const featuredMarket =
-    completeMarkets.find((market) => market.imageUrl) ??
-    completeMarkets[0] ??
+    tradingMarkets.find((market) => market.imageUrl) ??
+    tradingMarkets[0] ??
+    initialMarkets.find((market) => market.imageUrl) ??
+    initialMarkets[0] ??
     snapshot.markets.find((market) => market.imageUrl) ??
     snapshot.markets[0];
-  const liveMarkets = completeMarkets
+  const liveMarkets = tradingMarkets
     .filter((market) => market.id !== featuredMarket?.id)
     .slice(0, 5);
   const moreMarkets = snapshot.markets
-    .filter((market) => market.id !== featuredMarket?.id && !liveMarkets.some((item) => item.id === market.id))
+    .filter(
+      (market) =>
+        market.id !== featuredMarket?.id &&
+        !liveMarkets.some((item) => item.id === market.id) &&
+        !initialMarkets.some((item) => item.id === market.id) &&
+        !resolvedMarkets.some((item) => item.id === market.id),
+    )
     .slice(0, 6);
 
   return (
-    <main className="min-h-screen bg-[#07110d] text-white">
-      <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
-        <header className="flex flex-col gap-6 border-b border-white/10 pb-7 lg:flex-row lg:items-end lg:justify-between">
+    <main className="min-h-screen bg-[#090d10] text-white">
+      <header className="border-b border-[#1b2228] bg-[#0b0f12]">
+        <div className="mx-auto flex max-w-[1480px] items-center gap-5 px-5 py-4 lg:px-8">
+          <Link href="/" className="text-2xl font-semibold tracking-tight">Panta Signal</Link>
+          <span className="hidden rounded-md bg-[#151b20] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:inline-flex">
+            API Sidetrack
+          </span>
+          <div className="ml-auto flex items-center gap-2 text-xs text-white/45">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            {snapshot.source === "panta" ? "Live Panta API" : "Sample data"}
+          </div>
+        </div>
+        <div className="mx-auto flex max-w-[1480px] items-center gap-2 overflow-x-auto px-5 pb-3 lg:px-8">
+          {[
+            ["Featured", "#featured"],
+            ["Volume", "#volume"],
+            ["Live", "#live"],
+            ["Initial", "#initial"],
+            ["Resolved", "#resolved"],
+            ["Signal", "#signal"],
+            ["Wallet", "#wallet"],
+          ].map(([label, href], index) => (
+            <a
+              key={label}
+              href={href}
+              className={`whitespace-nowrap rounded-full px-4 py-2 text-sm transition ${index === 0 ? "bg-[#151b20] text-white" : "text-white/55 hover:bg-[#151b20] hover:text-white"}`}
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-[1480px] px-5 py-6 lg:px-8">
+        <section className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-[0.16em]">
-              <span className="rounded-full border border-emerald-300/25 bg-emerald-300/10 px-3 py-1.5 text-emerald-200">Panta API Sidetrack</span>
-              <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-white/45">Crypto World&apos;s Fair</span>
-            </div>
-            <h1 className="text-5xl font-semibold tracking-[-0.04em] sm:text-6xl">Panta Signal</h1>
-            <p className="mt-4 max-w-2xl text-lg leading-8 text-white/55">
-              Live prediction-market discovery, observed probability movement and non-custodial execution — powered by Panta.
+            <h1 className="text-3xl font-semibold tracking-tight">Market intelligence inside the Panta ecosystem</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">
+              Same market environment, with signal tracking, wallet exposure and observed probability history layered on top.
             </p>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:min-w-[420px]">
+          <div className="flex gap-2">
             {[
-              ["Markets", String(snapshot.markets.length)],
-              ["Live quotes", String(completeMarkets.length)],
-              ["API", snapshot.source === "panta" ? "Live" : "Sample"],
+              ["Markets", snapshot.markets.length],
+              ["Trading", tradingMarkets.length],
+              ["Initial", initialMarkets.length],
             ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4">
-                <div className="text-xs uppercase tracking-[0.14em] text-white/30">{label}</div>
-                <div className="mt-2 text-xl font-semibold text-white">{value}</div>
+              <div key={label} className="min-w-[92px] rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
+                <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">{label}</div>
+                <div className="mt-1 text-lg font-semibold">{value}</div>
               </div>
             ))}
           </div>
-        </header>
+        </section>
 
         {snapshot.source !== "panta" && (
           <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3 text-sm text-amber-100">Live Panta API configuration is not set yet, so the UI is running on clearly labeled sample data.</div>
         )}
 
-        <section className="mt-7 rounded-2xl border border-white/10 bg-[#0c1713]/90 p-3 shadow-2xl shadow-black/20 backdrop-blur">
+        <section className="rounded-2xl border border-[#20282e] bg-[#0f1418] p-3">
           <form className="grid gap-3 md:grid-cols-[1fr_180px_160px_auto]" action="/">
             <input
               name="q"
               defaultValue={params.q || ""}
               placeholder="Search title, description or category"
-              className="rounded-xl border border-white/10 bg-black/25 px-4 py-3 text-sm outline-none transition focus:border-emerald-300/35 placeholder:text-white/25"
+              className="rounded-xl border border-[#273139] bg-[#0b0f12] px-4 py-3 text-sm outline-none transition focus:border-white/25 placeholder:text-white/25"
             />
-            <select name="category" defaultValue={params.category || ""} className="rounded-xl border border-white/10 bg-[#0b1712] px-4 py-3 text-sm">
+            <select name="category" defaultValue={params.category || ""} className="rounded-xl border border-[#273139] bg-[#0b0f12] px-4 py-3 text-sm">
               <option value="">All categories</option>
               {snapshot.categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
-            <select name="status" defaultValue={params.status || ""} className="rounded-xl border border-white/10 bg-[#0b1712] px-4 py-3 text-sm">
+            <select name="status" defaultValue={params.status || ""} className="rounded-xl border border-[#273139] bg-[#0b0f12] px-4 py-3 text-sm">
               <option value="">All phases</option>
               <option value="primary">Primary</option>
               <option value="secondary">Secondary</option>
               <option value="resolved">Resolved</option>
             </select>
-            <button className="rounded-xl bg-emerald-300 px-5 py-3 text-sm font-semibold text-[#06100c] transition hover:bg-emerald-200">Explore markets</button>
+            <button className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">Search</button>
           </form>
         </section>
 
         {featuredMarket && (
-          <section className="mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-[#0b1612] shadow-2xl shadow-black/30">
+          <section id="featured" className="mt-5 overflow-hidden rounded-[24px] border border-[#20282e] bg-[#0f1418]">
             <div className="grid lg:grid-cols-[1.05fr_.95fr]">
-              <div className="relative min-h-[300px] overflow-hidden bg-black/25 lg:min-h-[420px]">
+              <div className="relative min-h-[280px] overflow-hidden bg-[#0b0f12] lg:min-h-[360px]">
                 {featuredMarket.imageUrl ? (
                   <Image
                     src={featuredMarket.imageUrl}
@@ -161,14 +206,14 @@ export default async function Home({ searchParams }: PageProps) {
                 ) : (
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(52,211,153,.18),transparent_45%)]" />
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#07110d] via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-[#0b1612]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0f1418] via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-[#0f1418]" />
                 <div className="absolute left-5 top-5 flex gap-2">
                   <span className="rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur">{featuredMarket.category}</span>
-                  <span className="rounded-full bg-emerald-300 px-3 py-1.5 text-xs font-semibold text-[#07110d]">Featured</span>
+                  <span className="rounded-full bg-[#182027] px-3 py-1.5 text-xs font-semibold text-white/70">Featured</span>
                 </div>
               </div>
               <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-emerald-300/80">{featuredMarket.phase} market</div>
+                <div className="text-xs font-medium uppercase tracking-[0.18em] text-white/35">{featuredMarket.phase} market</div>
                 <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] sm:text-4xl">{featuredMarket.title}</h2>
                 {featuredMarket.description && <p className="mt-4 line-clamp-3 leading-7 text-white/45">{featuredMarket.description}</p>}
                 <div className="mt-7 grid grid-cols-2 gap-3">
@@ -185,7 +230,7 @@ export default async function Home({ searchParams }: PageProps) {
                   <span>{featuredMarket.status}</span>
                   <span>{money(featuredMarket.volumeUsdc)} volume</span>
                 </div>
-                <Link href={marketDetailHref(featuredMarket)} className="mt-7 inline-flex w-fit rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#07110d] transition hover:bg-emerald-100">
+                <Link href={marketDetailHref(featuredMarket)} className="mt-7 inline-flex w-fit rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">
                   View market →
                 </Link>
               </div>
@@ -194,24 +239,25 @@ export default async function Home({ searchParams }: PageProps) {
         )}
 
         {liveMarkets.length > 0 && (
-          <section className="mt-8">
+          <section id="live" className="mt-8">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Live now</div>
-                <h2 className="mt-2 text-2xl font-semibold">Markets with live quotes</h2>
+                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Volume</div>
+                <h2 className="mt-2 text-2xl font-semibold">Trading now</h2>
+                <p className="mt-1 text-sm text-white/35">Only markets with non-zero Panta volume.</p>
               </div>
               <span className="text-sm text-white/30">{completeMarkets.length} quoted</span>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {liveMarkets.map((market) => (
-                <Link key={market.id} href={marketDetailHref(market)} className="group overflow-hidden rounded-2xl border border-white/10 bg-[#0b1612] transition hover:-translate-y-0.5 hover:border-white/20 hover:bg-[#0e1b16]">
+                <Link key={market.id} href={marketDetailHref(market)} className="group overflow-hidden rounded-2xl border border-[#20282e] bg-[#0f1418] transition hover:-translate-y-0.5 hover:border-[#303b43] hover:bg-[#12181d]">
                   <div className="relative aspect-[16/8.5] overflow-hidden bg-black/25">
                     {market.imageUrl ? (
                       <Image src={market.imageUrl} alt="" fill className="object-cover transition duration-300 group-hover:scale-[1.02]" sizes="(max-width: 768px) 100vw, 33vw" />
                     ) : (
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(52,211,153,.16),transparent_45%)]" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b1612] via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f1418] via-transparent to-transparent" />
                     <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/70 backdrop-blur">{market.category}</span>
                   </div>
                   <div className="p-5">
@@ -221,6 +267,66 @@ export default async function Home({ searchParams }: PageProps) {
                       <div className="rounded-xl bg-rose-300/[0.07] px-3 py-2.5 text-rose-200"><span className="text-xs text-white/35">NO</span><span className="float-right font-semibold">{pct(market.noProbability)}</span></div>
                     </div>
                     <div className="mt-4 flex justify-between text-xs text-white/30"><span>{market.phase}</span><span>{money(market.volumeUsdc)} vol.</span></div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {initialMarkets.length > 0 && (
+          <section id="initial" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <div className="text-xs uppercase tracking-[0.18em] text-amber-300/65">Initial</div>
+                <h2 className="mt-2 text-2xl font-semibold">Not traded yet</h2>
+                <p className="mt-1 text-sm text-white/35">50/50 is the starting price here. These markets currently have $0 Panta volume.</p>
+              </div>
+              <span className="text-sm text-white/30">{initialMarkets.length} markets</span>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {initialMarkets.slice(0, 6).map((market) => (
+                <Link key={market.id} href={marketDetailHref(market)} className="flex items-center gap-4 rounded-2xl border border-[#20282e] bg-[#0b0f12] p-3 transition hover:border-[#303b43]">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#151b20]">
+                    {market.imageUrl && <Image src={market.imageUrl} alt="" fill className="object-cover" sizes="64px" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="line-clamp-2 text-sm font-medium leading-5">{market.title}</div>
+                    <div className="mt-2 flex items-center gap-3 text-xs">
+                      <span className="text-emerald-300/70">YES {pct(market.yesProbability)}</span>
+                      <span className="text-rose-300/70">NO {pct(market.noProbability)}</span>
+                    </div>
+                  </div>
+                  <span className="shrink-0 text-[11px] text-white/25">$0 vol.</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {resolvedMarkets.length > 0 && (
+          <section id="resolved" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Ended</div>
+                <h2 className="mt-2 text-2xl font-semibold">Resolved markets</h2>
+                <p className="mt-1 text-sm text-white/35">Final 100/0 outcomes are separated from active pricing.</p>
+              </div>
+              <span className="text-sm text-white/30">{resolvedMarkets.length} markets</span>
+            </div>
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {resolvedMarkets.slice(0, 6).map((market) => (
+                <Link key={market.id} href={marketDetailHref(market)} className="flex items-center gap-4 rounded-2xl border border-[#20282e] bg-[#0b0f12] p-3 transition hover:border-[#303b43]">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#151b20]">
+                    {market.imageUrl && <Image src={market.imageUrl} alt="" fill className="object-cover" sizes="64px" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="line-clamp-2 text-sm font-medium leading-5">{market.title}</div>
+                    <div className="mt-2 text-xs text-white/35">{money(market.volumeUsdc)} volume</div>
+                  </div>
+                  <div className="text-right text-xs">
+                    <div className="font-semibold text-emerald-300/75">YES {pct(market.yesProbability)}</div>
+                    <div className="mt-1 font-semibold text-rose-300/75">NO {pct(market.noProbability)}</div>
                   </div>
                 </Link>
               ))}
@@ -256,7 +362,7 @@ export default async function Home({ searchParams }: PageProps) {
           </section>
         )}
 
-        <section className="mt-5 rounded-3xl border border-white/10 bg-[#0b1c15] p-6">
+        <section id="signal" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-sm uppercase tracking-[0.18em] text-white/35">Top movers</div>
@@ -276,7 +382,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <Link
                   key={mover.market.id}
                   href={marketDetailHref(mover.market)}
-                  className="rounded-2xl border border-white/10 bg-black/15 p-5 transition hover:border-emerald-300/30"
+                  className="rounded-2xl border border-[#20282e] bg-[#0b0f12] p-5 transition hover:border-[#303b43]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="text-sm text-white/75">{mover.market.title}</div>
@@ -291,7 +397,7 @@ export default async function Home({ searchParams }: PageProps) {
           )}
         </section>
 
-        <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6">
+        <section id="wallet" className="mt-5 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <div className="text-sm uppercase tracking-[0.18em] text-white/35">Wallet view</div>
