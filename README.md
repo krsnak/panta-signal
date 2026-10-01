@@ -1,6 +1,10 @@
 # Panta Signal
 
-Panta Signal is a focused Crypto World's Fair / Panta API Sidetrack prototype for turning prediction-market data into a fast intelligence dashboard.
+Panta Signal is a Panta-native prediction-market intelligence and execution layer built for the Crypto World's Fair. One production codebase is being prepared for three aligned submissions: the **Panta API Sidetrack**, the **SolanaCZE Track**, and the **global Colosseum Crypto World's Fair**.
+
+The product goal is deliberately broader than a REST dashboard: market discovery and signals should lead into a visible, real Solana flow — **Phantom connect → Panta positions → YES/NO quote → Panta build → VersionedTransaction → wallet signature → Solana broadcast → Panta submit/verify → refreshed position state**.
+
+See [ROADMAP.md](./ROADMAP.md) for the competition strategy, reliability audit, implementation phases, test matrix, release gates, and submission plan.
 
 ## Current MVP
 
@@ -52,11 +56,30 @@ Wallet flow
               -> Panta submit/verify
 ```
 
+## Competition-critical Solana flow
+
+For the SolanaCZE submission, the Solana path must be clearly visible in both the product and the demo. It is not sufficient to expose only Panta REST data. The release candidate must prove:
+
+1. Phantom / Solana wallet connection.
+2. Read-only Panta positions for the connected wallet.
+3. Real Panta YES/NO quote.
+4. Real Panta build response with Solana instructions.
+5. VersionedTransaction assembly.
+6. Explicit user signature in Phantom.
+7. Broadcast to Solana.
+8. Transaction signature + Explorer link.
+9. Panta submit / verify confirmation.
+10. Position refresh or an explicit indexer-pending state.
+
+No seed phrase or private key is ever requested or stored.
+
 ## Next implementation slices
 
-1. optionally connect an external LLM provider for generated insight; the grounding layer is already implemented
-2. replace local history storage with durable storage before multi-instance production deployment
-3. record a concise working demo
+1. finish catalog-first / async spot-price hydration so live RPC latency cannot block the full page
+2. replace ephemeral history storage with durable storage and scheduled collection
+3. complete and prove the real Phantom → Solana → Panta transaction golden path
+4. add automated contract/integration/E2E coverage for documented Panta success and failure shapes
+5. finish Panta-native market workspace UX and record the competition demo
 
 ## Submission checklist
 
@@ -65,6 +88,10 @@ Wallet flow
 - [x] market discovery and market detail
 - [x] read-only wallet positions
 - [x] non-custodial Panta transaction workflow implemented
+- [ ] real user-approved Solana transaction proven end-to-end with Explorer receipt
+- [ ] durable market history and scheduled snapshot collector
+- [ ] automated Panta contract/integration tests
+- [ ] SolanaCZE submission
 - [x] clear `Powered by Panta` attribution
 - [x] README and architecture notes
 - [ ] demo video
