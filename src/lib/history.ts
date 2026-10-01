@@ -34,7 +34,9 @@ const MAX_POINTS = 5000;
 let writeQueue: Promise<void> = Promise.resolve();
 
 function historyPath() {
-  const base = path.join(process.cwd(), ".panta-signal-data");
+  const base = process.env.VERCEL
+    ? path.join("/tmp", "panta-signal-data")
+    : path.join(process.cwd(), ".panta-signal-data");
   return {
     dir: base,
     file: path.join(base, "market-history.json"),
