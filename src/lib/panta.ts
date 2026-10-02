@@ -314,6 +314,34 @@ export type MarketCreateRegistration = {
   images?: string[];
 };
 
+export type PantaAccountStatus = {
+  status: string;
+  canCreateMarkets: boolean;
+  keyEnvironment: "live" | "test" | "unknown";
+};
+
+export async function getPantaAccountStatus(): Promise<PantaAccountStatus> {
+  const account = await pantaFetch<{
+    status?: string;
+    canCreateMarkets?: boolean;
+    apiKeyId?: string;
+  }>("account/", {
+    timeoutMs: 3000,
+    retries: 1,
+    noStore: true,
+  });
+  const apiKey = getConfig().apiKey || "";
+  return {
+    status: account.status?.trim() || "unknown",
+    canCreateMarkets: account.canCreateMarkets === true,
+    keyEnvironment: apiKey.startsWith("pk_live_")
+      ? "live"
+      : apiKey.startsWith("pk_test_")
+        ? "test"
+        : "unknown",
+  };
+}
+
 export async function quotePrimaryBuy(input: {
   wallet: string;
   marketId: string;
