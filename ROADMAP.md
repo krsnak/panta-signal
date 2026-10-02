@@ -441,6 +441,39 @@ The earlier 7-market limitation was caused by using the wrong discovery endpoint
 - Homepage keeps the judge-facing list capped at six cards while the registry can provide the broader active universe.
 - Test API environments do not hydrate registry PDAs through the sandbox detail endpoint, preventing one fixture from being duplicated across all cards.
 
+### S2 Panta ↔ Solana program proof — 2026-10-02
+
+**DONE**
+
+- Panta mainnet program: `6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp`.
+- Solana RPC confirms the account exists and is executable.
+- Homepage Solana proof now links both:
+  - a real Panta mainnet transaction, and
+  - the Panta program account itself.
+- This makes the Solana relationship visible to a judge without requiring repository knowledge.
+
+Trade-feed verification:
+
+- Manchester event account showed four Solana transactions in the inspected 24h window.
+- Two successful transactions contained `PrimaryOrderUsdc` and match the two Panta trade API records.
+- Two other transactions were `GraduateBreakingEventUsdc` operations, one of which failed; neither is a trade.
+- The `2 trades / 24h` figure is therefore independently corroborated on-chain for this market.
+
+### S2 execution-path integrity — 2026-10-02
+
+**DONE — no signing/broadcast performed**
+
+- `/api/panta/orders/quote` validates wallet, market PDA, side and positive USDC amount.
+- `/api/panta/orders/build` validates quote ID, wallet and slippage before requesting the unsigned Panta build.
+- Client maps Panta instruction metadata into Solana `TransactionInstruction` objects and compiles a v0 transaction.
+- The only signing/broadcast step is the explicit wallet call `provider.signAndSendTransaction(transaction)`.
+- Broadcast signature is then registered with Panta through `primaryordersubmit`.
+- Verification polls `primaryorderverify` at most 8 times with a 1.5s interval and stops on confirmed / failed / expired.
+- Submit/verify routes validate session IDs, Solana signatures and optional wallet addresses.
+- No real wallet approval, signature, SOL/USDC spend or broadcast was triggered by this audit.
+
+S2 is complete. Next phase: S3 submission packaging and final judge-flow polish.
+
 ## Sprint S3 — Submission packaging
 **Priority: P0**
 

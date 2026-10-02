@@ -313,8 +313,10 @@ S1 is complete.
 | S2.1 Production judge-flow verification | DONE | Production homepage and live market detail verified after S1; real Solana trade signatures and Explorer paths are present. |
 | S2.2 Homepage clarity correction | DONE | Competition homepage reduced to one product story: detect change → validate activity → verify on Solana. Resolved catalog cards and optional wallet/execution blocks removed from the judge-facing homepage. |
 | S2.3 Public registry discovery | DONE | Market discovery now follows the same public `/events` registry source used by the Panta dashboard, then hydrates each PDA through the existing market-detail API. |
-| S2.4 Panta program relationship | NEXT | Make the Panta/Solana program relationship explicit to the judge without requiring repository knowledge. |
-| S2.5 Execution-path integrity check | TODO | Confirm existing quote/build/sign/submit path remains intact; no real spend required. |
+| S2.4 Panta program relationship | DONE | Judge-facing Solana proof now links both a real Panta transaction and the executable Panta mainnet program account. |
+| S2.5 Execution-path integrity check | DONE | Static/code-path audit confirms quote → build → explicit wallet sign+broadcast → Panta submit → bounded verify remains wired and validated. No transaction was signed or broadcast during the audit. |
+
+Next: S3 submission packaging and judge-flow polish.
 
 Production catalog finding — 2026-10-02:
 
@@ -334,6 +336,8 @@ Discovery correction:
 - Panta Signal now uses that public read-only registry only for discovery.
 - Each discovered PDA is still hydrated through the existing Panta market-detail API for canonical title, current probability, phase and volume.
 - Local `pk_test_` environments intentionally skip live hydration so a sandbox fixture cannot overwrite every registry market with the same test record.
+- Panta mainnet program `6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp` was independently verified through Solana RPC as an executable account owned by the upgradeable BPF loader.
+- Manchester 24h trade activity was independently cross-checked on Solana: four event-account transactions touched the market in the window, exactly two were successful `PrimaryOrderUsdc` trade instructions; the other two were graduation instructions (one failed). Therefore the app's `2 trades / 24h` count is correct for that market.
 
 Audit conclusion:
 

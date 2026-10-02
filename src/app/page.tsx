@@ -208,6 +208,14 @@ export default async function Home({ searchParams }: PageProps) {
             <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">Mainnet</span>
             <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">SecondaryLimitOrder</span>
             <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">Public Panta transaction</span>
+            <a
+              href="https://explorer.solana.com/address/6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5 text-cyan-100/70 transition hover:text-cyan-100"
+            >
+              Panta program 6gM5…bZMp ↗
+            </a>
           </div>
         </section>
 

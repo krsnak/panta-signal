@@ -553,12 +553,17 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
 
   const isTestEnvironment = getConfig().apiKey?.startsWith("pk_test_") === true;
 
-  return Promise.all(
-    registryRows.map(async (event) => {
+  const hydrateEvent = async (event: PublicRegistryEvent) => {
       const id = event.eventPda!.trim();
       if (!isTestEnvironment) {
         try {
-          return await getMarketDetail(id);
+          const detail = await getMarketDetail(id);
+          return {
+            ...detail,
+            description: detail.description || event.description?.trim() || "",
+            category: event.Category?.trim() || detail.category,
+            imageUrl: detail.imageUrl || event.images?.[0] || null,
+          } satisfies PantaMarket;
         } catch {
           // Fall back to public registry metadata below.
         }
@@ -586,8 +591,14 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
           imageUrl: event.images?.[0] ?? null,
         } satisfies PantaMarket;
       }
-    }),
-  );
+  };
+
+  const hydrated: PantaMarket[] = [];
+  for (let index = 0; index < registryRows.length; index += 3) {
+    const batch = registryRows.slice(index, index + 3);
+    hydrated.push(...(await Promise.all(batch.map(hydrateEvent))));
+  }
+  return hydrated;
 }
 
 export async function getMarketTrades(marketId: string, limit = 50): Promise<PantaTrade[]> {
