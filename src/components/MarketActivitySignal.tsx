@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Activity = {
   tradeCount24h: number;
@@ -41,29 +41,10 @@ export default function MarketActivitySignal({
   marketId: string;
   title: string;
 }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [visible, setVisible] = useState(false);
   const [activity, setActivity] = useState<Activity | null>(null);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    const node = ref.current;
-    if (!node || visible) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "160px" },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [visible]);
-
-  useEffect(() => {
-    if (!visible) return;
     const controller = new AbortController();
     fetch(`/api/panta/markets/${encodeURIComponent(marketId)}/activity`, {
       signal: controller.signal,
@@ -79,10 +60,10 @@ export default function MarketActivitySignal({
         if ((err as Error).name !== "AbortError") setError(true);
       });
     return () => controller.abort();
-  }, [marketId, visible]);
+  }, [marketId]);
 
   return (
-    <div ref={ref} className="rounded-2xl border border-white/10 bg-black/15 p-4">
+    <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
       <div className="line-clamp-2 text-sm font-medium text-white/80">{title}</div>
       {!activity && !error && (
         <div className="mt-3 text-xs text-white/30">Loading trade activity…</div>
