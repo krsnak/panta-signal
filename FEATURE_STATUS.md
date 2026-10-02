@@ -126,8 +126,8 @@ Known gaps before Function 1 is DONE:
 | F1.4 Build primary Signal Feed card | DONE | The first product surface now explains the market signal with live probability, observed movement, 24h trades/shares, volume, freshness, and truthful fallback states. |
 | F1.5 Build Signal list / ranking | DONE | Canonical active-signal feed ranks movement before activity, excludes resolved markets, avoids duplicating the primary card, and shows an explicit truthful empty state. |
 | F1.6 Mirror signal in market detail | DONE | Homepage and market detail now use the same canonical signal model, movement/activity numbers, quote state, history window, and shared explanation; production Manchester smoke matches exactly. |
-| F1.7 Failure / stale / flat-history states | IN PROGRESS | Adding explicit freshness, unavailable activity, and feed-refresh failure states. |
-| F1.8 Production + visual audit | TODO | Tests, build, production smoke, desktop review. |
+| F1.7 Failure / stale / flat-history states | DONE | Signal Feed now distinguishes fresh/stale/unknown observations, unavailable trade activity, flat vs collecting history, and partial feed refresh failures without fabricating zero activity. |
+| F1.8 Production + visual audit | NEXT | Tests, build, production smoke, desktop review. |
 
 ---
 
