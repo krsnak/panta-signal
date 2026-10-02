@@ -4,6 +4,7 @@ import { getMarketSnapshot } from "@/lib/panta";
 import { getPersistentTopMovers, getSignalCoverage } from "@/lib/history";
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
+import MarketActivitySignal from "@/components/MarketActivitySignal";
 
 type PageProps = {
   searchParams: Promise<{
@@ -247,6 +248,29 @@ export default async function Home({ searchParams }: PageProps) {
                     </span>
                   </Link>
                 ))}
+              </div>
+            )}
+
+            {tradingMarkets.length > 0 && (
+              <div className="mt-6 border-t border-[#20282e] pt-5">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.16em] text-white/25">Recent activity</div>
+                    <div className="mt-1 text-sm text-white/45">
+                      Trade-tape signals from the last 24 hours.
+                    </div>
+                  </div>
+                  <span className="text-[11px] text-white/25">shares, not USD</span>
+                </div>
+                <div className="mt-4 grid gap-3">
+                  {tradingMarkets.slice(0, 3).map((market) => (
+                    <MarketActivitySignal
+                      key={market.id}
+                      marketId={market.id}
+                      title={market.title}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>
