@@ -86,8 +86,7 @@ export default async function Home({ searchParams }: PageProps) {
           {[
             ["Signal Feed", "#featured"],
             ["More signals", "#signal"],
-            ["Wallet", "#wallet"],
-            ["Execute", "#execute"],
+            ["Tools", "#tools"],
             ["Markets", "#live"],
           ].map(([label, href], index) => (
             <a
@@ -188,8 +187,8 @@ export default async function Home({ searchParams }: PageProps) {
           </div>
         </section>
 
-        <section className="mt-5 grid gap-5 xl:grid-cols-[1.08fr_.92fr]">
-          <div id="signal" className="rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+        <section id="signal" className="mt-5 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+          <div>
             <div className="flex items-end justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-white/30">More signals</div>
@@ -202,20 +201,28 @@ export default async function Home({ searchParams }: PageProps) {
             <div className="mt-5">
               <SignalList excludeMarketId={primarySignalMarket?.id} />
             </div>
-
           </div>
+        </section>
 
-          <div className="grid gap-5">
-            <div id="wallet" className="rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+        <section id="tools" className="mt-5 rounded-3xl border border-[#20282e] bg-[#0c1115] p-5 sm:p-6">
+          <div className="mb-5">
+            <div className="text-xs uppercase tracking-[0.18em] text-white/25">Optional tools</div>
+            <h2 className="mt-2 text-xl font-semibold">Wallet lookup and non-custodial execution</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/35">
+              These tools extend the signal workflow, but they are not required to understand or verify the core market signal.
+            </p>
+          </div>
+          <div className="grid gap-5 xl:grid-cols-2">
+            <div id="wallet" className="rounded-2xl border border-[#20282e] bg-[#0f1418] p-5">
               <div className="text-xs uppercase tracking-[0.18em] text-white/30">Wallet Intelligence</div>
-              <h2 className="mt-2 text-2xl font-semibold">Your Panta exposure</h2>
+              <h3 className="mt-2 text-xl font-semibold">Your Panta exposure</h3>
               <p className="mt-2 text-sm leading-6 text-white/45">Read-only Solana position lookup. No seed phrase or private key is requested.</p>
               <div className="mt-5"><WalletPositionsLookup /></div>
             </div>
 
-            <div id="execute" className="rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/30">Solana Execution</div>
-              <h2 className="mt-2 text-2xl font-semibold">Act on a signal, non-custodially</h2>
+            <div id="execute" className="rounded-2xl border border-[#20282e] bg-[#0f1418] p-5">
+              <div className="text-xs uppercase tracking-[0.18em] text-white/30">Optional Solana Execution</div>
+              <h3 className="mt-2 text-xl font-semibold">Act on a signal, non-custodially</h3>
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/55">
                 {["Connect Phantom", "Panta quote", "Build", "Sign on Solana", "Panta verify"].map((step, index) => (
                   <span key={step} className="rounded-full border border-[#273139] bg-[#0b0f12] px-3 py-2">{index + 1}. {step}</span>
@@ -226,8 +233,9 @@ export default async function Home({ searchParams }: PageProps) {
                   Open execution workspace →
                 </Link>
               ) : (
-                <div className="mt-5 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] p-4 text-sm leading-6 text-amber-100/60">
-                  Panta currently exposes no primary market in the live catalog, so a real buy transaction cannot be built right now. Phantom connection and wallet positions remain fully functional; execution activates automatically when a primary market opens.
+                <div className="mt-5 flex items-start gap-2 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-xs leading-5 text-white/40">
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/30" />
+                  <span>No primary market is currently available in the live Panta catalog. The execution path remains implemented and activates when a primary market is available.</span>
                 </div>
               )}
             </div>

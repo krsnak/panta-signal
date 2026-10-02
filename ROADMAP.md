@@ -310,6 +310,15 @@ Acceptance gate: a judge can click from Panta Signal to a real Panta-related Sol
 
 Acceptance gate: unavailable execution cannot make the product appear broken.
 
+**DONE 2026-10-02**
+
+- Signal queue is now a full-width core section instead of sharing equal visual weight with wallet/execution.
+- Wallet and execution are grouped below it as `Optional tools`.
+- Top navigation now uses a single `Tools` entry instead of separate Wallet/Execute entries.
+- Execution is labelled `Optional Solana Execution`.
+- The no-primary-market state is now a compact neutral status instead of a large amber warning.
+- No wallet or transaction behavior changed.
+
 #### S1.5 — Reduce Market Explorer noise
 
 - Keep Market Explorer, but visually demote it below signals/on-chain proof.

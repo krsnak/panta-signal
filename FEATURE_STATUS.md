@@ -289,8 +289,8 @@ The next active work is not Function 2 and not F1v2.3. It is a short **submissio
 | S1.1 First-screen story | DONE | First screen now states the product purpose, Solana positioning and trusted data sources before the Signal hero. Local render, tests, lint and production build verified. |
 | S1.2 Simplify Signal hero | DONE | Hero now prioritizes probability movement, trading activity and market volume, adds a plain-language takeaway, and demotes observations/share/quote state into trust labels. Tests, lint, build and local render verified. |
 | S1.3 On-chain evidence | DONE | Homepage links to a Panta mainnet SecondaryLimitOrder transaction verified through Solana RPC, with explicit scope wording; local render, tests, lint and build verified. |
-| S1.4 Demote Wallet + Execution | NEXT | Keep capability without letting unavailable execution look like a broken core feature. |
-| S1.5 Reduce Market Explorer noise | TODO | Prioritize credible live markets and demote catalog browsing. |
+| S1.4 Demote Wallet + Execution | DONE | Wallet and execution now live in a secondary Optional tools section, top navigation collapses them into Tools, and unavailable execution is a compact neutral state. Tests, lint, build and local render verified. |
+| S1.5 Reduce Market Explorer noise | NEXT | Prioritize credible live markets and demote catalog browsing. |
 | S1.6 Market detail provenance | TODO | Explicitly label Panta API, durable Signal and Solana evidence sources. |
 
 Audit conclusion:
