@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMarketDetail, getWalletPositions } from "@/lib/panta";
+import { getLatestMarketSnapshot } from "@/lib/history";
+import { estimatePositionValue } from "@/lib/position-value";
 
 export async function GET(request: NextRequest) {
   const wallet = request.nextUrl.searchParams.get("wallet")?.trim();
@@ -12,18 +14,34 @@ export async function GET(request: NextRequest) {
     const marketIds = Array.from(new Set(positions.map((position) => position.marketId))).slice(0, 8);
     const marketEntries = await Promise.all(
       marketIds.map(async (marketId) => {
-        try {
-          return [marketId, await getMarketDetail(marketId)] as const;
-        } catch {
-          return [marketId, null] as const;
-        }
+        const [market, cached] = await Promise.all([
+          getMarketDetail(marketId).catch(() => null),
+          getLatestMarketSnapshot(marketId, 24).catch(() => null),
+        ]);
+        return [marketId, { market, cached }] as const;
       }),
     );
     const markets = new Map(marketEntries);
     const enriched = positions.map((position) => {
-      const market = markets.get(position.marketId);
+      const context = markets.get(position.marketId);
+      const market = context?.market ?? null;
+      const cached = context?.cached ?? null;
+      const valuation = estimatePositionValue({
+        shares: position.shares,
+        side: position.side,
+        outcome: position.outcome,
+        liveYesPrice: market?.yesProbability ?? null,
+        liveNoPrice: market?.noProbability ?? null,
+        cachedYesPrice: cached?.yesProbability ?? null,
+        cachedNoPrice: cached?.noProbability ?? null,
+      });
       return {
         ...position,
+        estimatedValueUsdc: valuation.estimatedValueUsdc,
+        valuationUnitPrice: valuation.unitPrice,
+        valuationState: valuation.state,
+        valuationObservedAt:
+          valuation.state === "cached" ? cached?.capturedAt ?? null : null,
         market: market
           ? {
               title: market.title,
@@ -34,6 +52,16 @@ export async function GET(request: NextRequest) {
               yesProbability: market.yesProbability,
               noProbability: market.noProbability,
             }
+          : cached
+            ? {
+                title: cached.title,
+                category: cached.category,
+                phase: cached.phase,
+                status: cached.status,
+                imageUrl: cached.imageUrl,
+                yesProbability: cached.yesProbability,
+                noProbability: cached.noProbability,
+              }
           : null,
       };
     });

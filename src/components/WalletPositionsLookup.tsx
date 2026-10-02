@@ -12,6 +12,10 @@ type Position = {
   claimable: boolean;
   claimed: boolean;
   outcome: string | null;
+  estimatedValueUsdc: number | null;
+  valuationUnitPrice: number | null;
+  valuationState: "live" | "cached" | "resolved" | "unavailable";
+  valuationObservedAt: number | null;
   market?: {
     title: string;
     category: string;
@@ -110,6 +114,16 @@ export default function WalletPositionsLookup() {
   }
 
   const visibleError = error || walletError;
+  const knownExposure =
+    positions?.reduce(
+      (sum, position) =>
+        position.estimatedValueUsdc === null
+          ? sum
+          : sum + position.estimatedValueUsdc,
+      0,
+    ) ?? null;
+  const unavailableCount =
+    positions?.filter((position) => position.estimatedValueUsdc === null).length ?? 0;
 
   return (
     <>
@@ -171,8 +185,28 @@ export default function WalletPositionsLookup() {
               No Panta positions found for this wallet.
             </div>
           ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {positions.map((position, index) => (
+            <>
+              <div className="mb-4 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-white/10 bg-black/15 p-4">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Positions</div>
+                  <div className="mt-2 text-xl font-semibold">{positions.length}</div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/15 p-4">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Est. exposure</div>
+                  <div className="mt-2 text-xl font-semibold">
+                    {knownExposure === null ? "—" : `$${knownExposure.toFixed(2)}`}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/10 bg-black/15 p-4">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Valuation coverage</div>
+                  <div className="mt-2 text-xl font-semibold">
+                    {positions.length - unavailableCount}/{positions.length}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                {positions.map((position, index) => (
                 <div
                   key={`${position.marketId}-${position.side}-${index}`}
                   className="rounded-xl border border-white/10 bg-black/15 p-4"
@@ -187,6 +221,22 @@ export default function WalletPositionsLookup() {
                     {position.market?.title || "Panta market"}
                   </div>
                   <div className="mt-3 text-2xl font-semibold">{position.shares.toLocaleString()} shares</div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="text-white/55">
+                      Est. value: {position.estimatedValueUsdc === null ? "—" : `$${position.estimatedValueUsdc.toFixed(2)}`}
+                    </span>
+                    <span className={`rounded-full px-2 py-1 ${
+                      position.valuationState === "live"
+                        ? "bg-emerald-300/10 text-emerald-200"
+                        : position.valuationState === "cached"
+                          ? "bg-amber-300/10 text-amber-200"
+                          : position.valuationState === "resolved"
+                            ? "bg-white/10 text-white/55"
+                            : "bg-rose-300/10 text-rose-200"
+                    }`}>
+                      {position.valuationState}
+                    </span>
+                  </div>
                   {position.market && (
                     <div className="mt-2 text-xs text-white/40">
                       Current {position.side.toUpperCase()} quote:{" "}
@@ -201,8 +251,9 @@ export default function WalletPositionsLookup() {
                     {position.outcome && <span>Outcome: {position.outcome}</span>}
                   </div>
                 </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
