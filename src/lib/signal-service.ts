@@ -110,6 +110,7 @@ export async function getCanonicalSignalFeed(options?: {
   const settled = await Promise.allSettled(
     observed.map((market) => getCanonicalMarketSignal(market.id, hours)),
   );
+  const failedCount = settled.filter((result) => result.status === "rejected").length;
   const signals = settled
     .filter(
       (result): result is PromiseFulfilledResult<MarketSignal> =>
@@ -119,5 +120,9 @@ export async function getCanonicalSignalFeed(options?: {
     .filter((signal) => signal.kind !== "resolved")
     .filter((signal) => signal.market.id !== options?.excludeMarketId);
 
-  return rankMarketSignals(signals).slice(0, limit);
+  return {
+    signals: rankMarketSignals(signals).slice(0, limit),
+    observedCount: observed.length,
+    failedCount,
+  };
 }

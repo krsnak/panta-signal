@@ -7,6 +7,10 @@ import type { MarketSignal } from "@/lib/signal-model";
 type ApiResponse = {
   signals?: MarketSignal[];
   error?: string;
+  meta?: {
+    observedCount: number;
+    failedCount: number;
+  };
 };
 
 function pct(value: number | null) {
@@ -52,6 +56,7 @@ export default function SignalList({
   excludeMarketId?: string | null;
 }) {
   const [signals, setSignals] = useState<MarketSignal[] | null>(null);
+  const [failedCount, setFailedCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -69,6 +74,7 @@ export default function SignalList({
           throw new Error(body.error || "Signal feed unavailable");
         }
         setSignals(body.signals);
+        setFailedCount(body.meta?.failedCount ?? 0);
       })
       .catch((err) => {
         if ((err as Error).name !== "AbortError") {
@@ -98,13 +104,21 @@ export default function SignalList({
   if (signals.length === 0) {
     return (
       <div className="rounded-2xl border border-white/10 bg-black/15 p-5 text-sm leading-6 text-white/45">
-        No additional observed market qualifies yet. The list will populate only when another market has real durable observations or trading activity.
+        {failedCount > 0
+          ? `${failedCount} observed market${failedCount === 1 ? "" : "s"} could not be refreshed right now. No additional verified signal is shown.`
+          : "No additional observed market qualifies yet. The list will populate only when another market has real durable observations or trading activity."}
       </div>
     );
   }
 
   return (
-    <div className="divide-y divide-[#20282e]">
+    <div>
+      {failedCount > 0 && (
+        <div className="mb-4 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] px-3 py-2 text-xs text-amber-100/60">
+          {failedCount} observed market{failedCount === 1 ? "" : "s"} could not be refreshed and {failedCount === 1 ? "is" : "are"} omitted.
+        </div>
+      )}
+      <div className="divide-y divide-[#20282e]">
       {signals.map((signal, index) => (
         <Link
           key={signal.market.id}
@@ -117,7 +131,10 @@ export default function SignalList({
               <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/45">
                 {kindLabel(signal)}
               </span>
-              <span className="text-[11px] text-white/25">{signal.quoteState}</span>
+              <span className="text-[11px] text-white/25">
+                {signal.quoteState}
+                {signal.current.freshnessState === "stale" ? " · stale" : ""}
+              </span>
             </div>
             <div className="mt-2 line-clamp-1 text-sm font-medium text-white/80">
               {signal.market.title}
@@ -142,6 +159,7 @@ export default function SignalList({
           </div>
         </Link>
       ))}
+      </div>
     </div>
   );
 }

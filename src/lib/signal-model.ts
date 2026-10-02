@@ -25,6 +25,7 @@ export type MarketSignal = {
     volumeUsdc: number;
     observedAt: number | null;
     ageSeconds: number | null;
+    freshnessState: "fresh" | "stale" | "unknown";
   };
   movement: {
     observationCount: number;
@@ -65,6 +66,7 @@ export function buildMarketSignal(input: {
     input.market.noProbability ?? latest?.noProbability ?? null;
   const latestObservedAt =
     input.quoteObservedAt ?? latest?.capturedAt ?? null;
+  const ageSeconds = clampAgeSeconds(nowMs, latestObservedAt);
 
   const hasMovementWindow =
     first !== null &&
@@ -109,7 +111,9 @@ export function buildMarketSignal(input: {
       noProbability: currentNo,
       volumeUsdc: input.market.volumeUsdc,
       observedAt: latestObservedAt,
-      ageSeconds: clampAgeSeconds(nowMs, latestObservedAt),
+      ageSeconds,
+      freshnessState:
+        ageSeconds === null ? "unknown" : ageSeconds <= 15 * 60 ? "fresh" : "stale",
     },
     movement: {
       observationCount: history.length,
@@ -183,6 +187,9 @@ export function describeMarketSignal(signal: MarketSignal) {
   }
 
   if (signal.kind === "activity" && activity) {
+    if (signal.movement.changePoints === null) {
+      return `Trading activity is present, but durable price history is still collecting. ${activity.tradeCount24h} trades moved ${activity.yesShares24h.toFixed(2)} YES and ${activity.noShares24h.toFixed(2)} NO shares in the last 24h.`;
+    }
     return `Probability is flat across ${signal.movement.observationCount} observations, but ${activity.tradeCount24h} trades moved ${activity.yesShares24h.toFixed(2)} YES and ${activity.noShares24h.toFixed(2)} NO shares in the last 24h.`;
   }
 

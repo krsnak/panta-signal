@@ -195,7 +195,10 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
               <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 uppercase text-white/50">
                 {signal?.kind ?? "unavailable"}
               </span>
-              <span className="text-white/30">{signal?.quoteState ?? "unavailable"}</span>
+              <span className="text-white/30">
+                {signal?.quoteState ?? "unavailable"}
+                {signal?.current.freshnessState === "stale" ? " · stale" : ""}
+              </span>
             </div>
           </div>
 

@@ -10,13 +10,19 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.get("excludeMarketId")?.trim() || null;
 
   try {
-    const signals = await getCanonicalSignalFeed({
+    const feed = await getCanonicalSignalFeed({
       hours: 24,
       limit,
       excludeMarketId,
     });
     return NextResponse.json(
-      { signals },
+      {
+        signals: feed.signals,
+        meta: {
+          observedCount: feed.observedCount,
+          failedCount: feed.failedCount,
+        },
+      },
       {
         headers: {
           "Cache-Control": "public, s-maxage=8, stale-while-revalidate=20",

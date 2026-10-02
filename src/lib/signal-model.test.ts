@@ -65,6 +65,7 @@ describe("canonical market signal", () => {
     expect(signal.movement.changePoints).toBeCloseTo(8);
     expect(signal.movement.windowSeconds).toBe(3600);
     expect(signal.current.ageSeconds).toBe(300);
+    expect(signal.current.freshnessState).toBe("fresh");
   });
 
   it("uses trade activity when price is flat", () => {
@@ -131,6 +132,38 @@ describe("canonical market signal", () => {
     expect(signal.activityState).toBe("unavailable");
     expect(signal.activity24h).toBeNull();
     expect(signal.kind).toBe("collecting");
+  });
+
+  it("marks an old cached observation as stale", () => {
+    const signal = buildMarketSignal({
+      market,
+      history: [point(0.58, 1_000_000)],
+      activity: null,
+      quoteState: "cached",
+      quoteObservedAt: 1_000_000,
+      nowMs: 2_000_000,
+    });
+
+    expect(signal.current.freshnessState).toBe("stale");
+    expect(signal.current.ageSeconds).toBe(1000);
+  });
+
+  it("describes activity without claiming flat probability when history is insufficient", () => {
+    const signal = buildMarketSignal({
+      market,
+      history: [point(0.58, 4_600_000)],
+      activity: {
+        ...noActivity,
+        tradeCount24h: 2,
+        yesShares24h: 3,
+      },
+      quoteState: "live",
+      quoteObservedAt: 4_600_000,
+      nowMs: 4_900_000,
+    });
+
+    expect(describeMarketSignal(signal)).toContain("history is still collecting");
+    expect(describeMarketSignal(signal)).not.toContain("Probability is flat");
   });
 
   it("never promotes a resolved market as an active signal", () => {

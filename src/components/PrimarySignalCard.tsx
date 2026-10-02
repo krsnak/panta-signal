@@ -91,7 +91,8 @@ export default function PrimarySignalCard({
   const no = signal?.current.noProbability ?? fallback.noProbability;
   const activity = signal?.activity24h ?? null;
   const change = signal?.movement.changePoints ?? null;
-  const quoteState = signal?.quoteState ?? "cached";
+  const quoteState = signal?.quoteState ?? "loading";
+  const stale = signal?.current.freshnessState === "stale";
 
   return (
     <section id="featured" className="overflow-hidden rounded-[28px] border border-[#263038] bg-[#0f1418] shadow-2xl shadow-black/20">
@@ -105,8 +106,8 @@ export default function PrimarySignalCard({
             <span className="text-xs text-white/35">{signal ? signalLabel(signal) : "Loading live signal…"}</span>
           </div>
           <div className="flex items-center gap-2 text-xs">
-            <span className={`rounded-full px-2.5 py-1 ${quoteState === "live" ? "bg-emerald-300/10 text-emerald-200" : quoteState === "cached" ? "bg-amber-300/10 text-amber-200" : "bg-white/[0.06] text-white/45"}`}>
-              {quoteState}
+            <span className={`rounded-full px-2.5 py-1 ${quoteState === "live" ? "bg-emerald-300/10 text-emerald-200" : quoteState === "cached" || stale ? "bg-amber-300/10 text-amber-200" : "bg-white/[0.06] text-white/45"}`}>
+              {quoteState}{stale ? " · stale" : ""}
             </span>
             {signal && <span className="text-white/30">updated {freshness(signal.current.ageSeconds)}</span>}
           </div>
@@ -150,7 +151,7 @@ export default function PrimarySignalCard({
 
           {error && (
             <div className="mt-5 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] px-4 py-3 text-xs leading-5 text-amber-100/60">
-              Live signal refresh failed. Showing the latest stored market observation instead.
+              Live signal refresh failed. Showing the best available fallback data without treating it as a fresh signal.
             </div>
           )}
 
