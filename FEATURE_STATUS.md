@@ -195,11 +195,11 @@ Perform the following in short, documented tasks:
 | --- | --- | --- |
 | F1v2.1 Verify all official historical-data surfaces | DONE | Current official playground/API surface exposes current market prices and historical trade activity, but no documented historical spot-price/state series or trade-row price field. |
 | F1v2.2 Inspect real trade transactions on Solana | DONE | Real mainnet event history inspected. Panta exposes exact price-bearing secondary order events on-chain, but primary trades lack an explicit historical price and the web chart uses a heuristic fallback. |
-| F1v2.3 Test historical price reconstruction | NEXT | Build a read-only experiment only around protocol-derived fields; determine whether exact coverage exists at actual trade timestamps without using chart heuristics. |
-| F1v2.4 Validate against known observations | TODO | Compare reconstructed values with our durable snapshots/current Panta detail; quantify mismatch. |
-| F1v2.5 Decide source hierarchy | TODO | Decide whether reconstruction is exact enough to supplement/replace snapshot-only movement history. |
-| F1v2.6 Implement only if superior | TODO | Backfill history and integrate it into the canonical Signal model only if accuracy/reliability is demonstrated. |
-| F1v2.7 Production verification | TODO | Re-run tests, production smoke and Signal Feed consistency audit. |
+| F1v2.3 Test historical price reconstruction | PAUSED / BACKLOG | Resume only after submission-critical work is complete or if exact reconstruction becomes a direct demo blocker. |
+| F1v2.4 Validate against known observations | PAUSED / BACKLOG | Deferred with F1v2.3. |
+| F1v2.5 Decide source hierarchy | PAUSED / BACKLOG | Current production hierarchy remains unchanged for the hackathon release. |
+| F1v2.6 Implement only if superior | PAUSED / BACKLOG | No reconstruction integration before the submission sprint. |
+| F1v2.7 Production verification | PAUSED / BACKLOG | Not applicable until v2 implementation resumes. |
 
 ### Decision gate
 
@@ -267,6 +267,19 @@ F1v2.2 conclusion:
 - Therefore F1v2.2 does not justify changing the production Signal Feed. F1v2.3 may experiment with the protocol-derived subset only; it must measure coverage and must not silently substitute order prices or heuristic primary prices for actual historical market probability.
 
 No production code changes have been made.
+
+### Priority decision — 2026-10-02
+
+Function 1 v2 is deliberately stopped after F1v2.2. The research is documented and preserved, but continuing it now has a poor submission-value / engineering-cost ratio because exact primary historical probability remains unproven.
+
+Active project priority is now:
+
+1. **SolanaCZE submission readiness**
+2. **Colosseum submission readiness**
+3. **Panta API Sidetrack submission from the same release candidate**
+4. Historical reconstruction only after submission-critical blockers are cleared
+
+The next active work is not Function 2 and not F1v2.3. It is a short **submission sprint** focused on judge comprehension, visible Solana proof, production reliability and demo packaging. See `ROADMAP.md`.
 
 Implementation proceeds only if the research establishes:
 

@@ -1,6 +1,6 @@
 # Panta Signal
 
-Panta Signal is a Panta-native prediction-market intelligence and execution layer built for the Crypto World's Fair. One production codebase is being prepared for three aligned submissions: the **Panta API Sidetrack**, the **SolanaCZE Track**, and the **global Colosseum Crypto World's Fair**.
+Panta Signal is a Panta-native prediction-market intelligence and execution layer built for the Crypto World's Fair. One production codebase is being prepared for three aligned submissions. Current priority is **SolanaCZE + global Colosseum**; the **Panta API Sidetrack** reuses the same release candidate as a secondary submission.
 
 The product goal is deliberately broader than a REST dashboard: market discovery and signals should lead into a visible, real Solana flow — **Phantom connect → Panta positions → YES/NO quote → Panta build → VersionedTransaction → wallet signature → Solana broadcast → Panta submit/verify → refreshed position state**.
 
@@ -34,7 +34,7 @@ Panta provides current market detail plus a public trade tape. This gives Panta 
 
 Panta's public trade rows do not currently expose an explicit historical post-trade YES/NO spot probability. Therefore Function 1 v1 uses durable Postgres snapshots of live market detail for historical probability movement.
 
-The next planned investigation, **Function 1 v2 — Historical Price Reconstruction**, will determine whether those existing trade signatures and Solana on-chain data can reconstruct historical probabilities retroactively. It will be implemented only if the result is demonstrably exact/reliable enough to improve on snapshot-only history. See [FEATURE_STATUS.md](./FEATURE_STATUS.md).
+**Function 1 v2 — Historical Price Reconstruction is paused after the F1v2.2 research gate.** The investigation proved useful on-chain decoding paths and exact secondary order prices, but not complete exact historical primary probability coverage. The current durable-snapshot model therefore remains canonical for the submission release. See [FEATURE_STATUS.md](./FEATURE_STATUS.md).
 
 ## Local setup
 
@@ -69,28 +69,28 @@ Wallet flow
 
 ## Competition-critical Solana flow
 
-For the SolanaCZE submission, the Solana path must be clearly visible in both the product and the demo. It is not sufficient to expose only Panta REST data. The release candidate must prove:
+For the SolanaCZE submission, the Solana path must be clearly visible in both the product and the demo. It is not sufficient to expose only Panta REST data. The release candidate should clearly demonstrate the implemented path:
 
 1. Phantom / Solana wallet connection.
 2. Read-only Panta positions for the connected wallet.
 3. Real Panta YES/NO quote.
 4. Real Panta build response with Solana instructions.
 5. VersionedTransaction assembly.
-6. Explicit user signature in Phantom.
-7. Broadcast to Solana.
-8. Transaction signature + Explorer link.
-9. Panta submit / verify confirmation.
+6. Wallet-signature step in the implemented flow.
+7. Broadcast path to Solana.
+8. Transaction signature + Explorer receipt UX.
+9. Panta submit / verify path.
 10. Position refresh or an explicit indexer-pending state.
 
-No seed phrase or private key is ever requested or stored.
+No seed phrase or private key is ever requested or stored. A new real mainnet transaction is **not** required for the submission sprint unless it becomes an explicit judging requirement; any real signing/spend remains user-approved only. Public on-chain Panta transactions can be used as auditable Solana evidence in the demo.
 
 ## Next implementation slices
 
-1. Function 1 v2 research: determine whether historical YES/NO probability can be reconstructed from Panta trade signatures / Solana state
-2. if validated, add retrospective price-history backfill to the canonical Signal model
-3. only after the v2 decision, explicitly start Function 2 — Wallet Intelligence
-4. later complete and prove the real Phantom → Solana → Panta transaction golden path
-5. finish submission/demo packaging after product functions pass their own gates
+1. Judge-first product pass: make the value proposition and Signal Feed understandable within the first screen.
+2. SolanaCZE proof pass: expose clear, verifiable on-chain evidence without expanding into unnecessary wallet/reconstruction work.
+3. Production smoke + demo packaging: mobile/desktop check, 60–120 second demo, screenshots and submission copy.
+4. Submit the same release candidate to SolanaCZE and Colosseum, then adapt the framing for the Panta API Sidetrack.
+5. Resume historical reconstruction, Wallet Intelligence or deeper execution work only after submission-critical blockers are cleared.
 
 ## Submission checklist
 
@@ -99,10 +99,10 @@ No seed phrase or private key is ever requested or stored.
 - [x] market discovery and market detail
 - [x] read-only wallet positions
 - [x] non-custodial Panta transaction workflow implemented
-- [ ] real user-approved Solana transaction proven end-to-end with Explorer receipt
+- [ ] optional: real user-approved Solana transaction proven end-to-end with Explorer receipt
 - [x] durable market history in Postgres
 - [x] automated Signal/Panta normalization and behavior tests
-- [ ] stronger reliable scheduled collection mechanism if still needed after Function 1 v2 history research
+- [ ] stronger scheduled collection only if final production smoke shows a real reliability need
 - [ ] SolanaCZE submission
 - [x] clear `Powered by Panta` attribution
 - [x] README and architecture notes

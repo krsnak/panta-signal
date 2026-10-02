@@ -8,7 +8,15 @@
 
 Function 1 passed its functional, production, reliability and desktop browser audit.
 
-**Next planned work is a Function 1 v2 research pass: Historical Price Reconstruction.** It must first determine whether Panta trade signatures / Solana on-chain state can provide exact historical probability points retroactively. Implementation is conditional on evidence that this is more reliable/useful than the existing durable-snapshot model. Function 2 remains paused during this investigation.
+**Priority reset — 2026-10-02:** Function 1 v2 Historical Price Reconstruction is paused after F1v2.2. The research proved useful protocol facts but did not prove complete, exact primary-market historical probability coverage. Further reconstruction work is now backlog, not submission-critical work.
+
+The active objective is a **competition submission sprint**:
+
+1. **SolanaCZE Track — primary target.**
+2. **Colosseum Crypto World's Fair — same production build, broader product/startup framing.**
+3. **Panta API Sidetrack — secondary submission using the same application and existing meaningful Panta integration; no extra speculative research scope.**
+
+From this point, work is prioritized by what a judge can see, understand and verify in a short demo. New research is accepted only when it directly removes a submission blocker.
 
 Signal Feed must combine:
 
@@ -49,18 +57,19 @@ Completed:
 - Function 1 production audit completed with 35/35 tests passing at the final v1 gate
 
 External integration blockers:
-- perform one explicit user-approved real Phantom transaction to prove the full mainnet golden path
-- GitHub scheduled collection has been unreliable; production history remains durable through Postgres and successful live quote/detail observations, but a stronger scheduler may still be desirable before final submission
+- no blocking external integration issue is currently known for the submission sprint
+- a real Phantom transaction remains a valuable optional proof, but it is **not** a submission blocker unless a competition requirement explicitly makes it one; any spend/broadcast still requires explicit user approval
+- GitHub scheduled collection has been unreliable; production history remains durable through Postgres and successful live quote/detail observations. Scheduler work is deferred unless the live demo shows a concrete reliability gap
 
 Function 1 v1 is signal-complete under its documented acceptance criteria. Its current limitation is historical depth: 24h trade activity is immediately available from Panta, while 24h probability movement requires either accumulated Panta Signal snapshots or a future validated retrospective reconstruction path.
 
 ## Mission
 
-Build one production-quality application that can be submitted to three aligned competitions:
+Build one production-quality application that can be submitted to three aligned competitions, with explicit priority:
 
-1. **Panta API Sidetrack** — demonstrate a deep, reliable, useful Panta API integration.
-2. **SolanaCZE Track** — make the Solana integration obvious, meaningful, and demonstrably on-chain.
-3. **Colosseum Crypto World's Fair** — present Panta Signal as a credible product/startup, not a one-off demo.
+1. **SolanaCZE Track — PRIMARY** — make the Solana integration obvious, meaningful, demonstrably on-chain, and easy to judge.
+2. **Colosseum Crypto World's Fair — PRIMARY** — present Panta Signal as a credible product/startup, not a one-off demo.
+3. **Panta API Sidetrack — SECONDARY** — reuse the same build to demonstrate a meaningful, reliable Panta API integration without expanding scope for sidetrack-only research.
 
 The project should feel like a **native intelligence layer inside the Panta ecosystem**: familiar market UX, Panta-native data, but with added signal tracking, wallet exposure, probability history, and transaction intelligence.
 
@@ -85,7 +94,7 @@ What must be visible:
 Primary story:
 > Panta Signal is not only a REST dashboard. It exposes the complete Solana transaction path behind a Panta market action.
 
-**Non-negotiable demo flow:**
+**Full execution flow already implemented / optional stretch demo:**
 
 ```text
 Phantom connect
@@ -102,7 +111,7 @@ Phantom connect
   -> wallet positions refresh
 ```
 
-This flow must be visible in the product and demo. It must not be represented by fake buttons or mocked success states.
+The implemented flow must remain real and non-custodial; it must not be represented by fake buttons or mocked success states. For the submission sprint, the minimum P0 proof is verifiable Solana/Panta on-chain activity plus the real quote/build transaction path. Broadcasting a new mainnet transaction is optional and requires explicit user approval.
 
 ### Colosseum Crypto World's Fair
 
@@ -183,17 +192,61 @@ Until enough observations exist, the product must show an explicit data-collecti
 
 ### Function 1 v2 research — retrospective history
 
-The next Signal Feed investigation asks whether historical probability points can be recovered immediately instead of waiting for our own snapshot window to fill.
+**PAUSED / BACKLOG after F1v2.2.**
 
-Research order:
+The investigation established that Panta's production frontend reconstructs parts of its history from Solana transactions, that exact secondary order prices can be decoded on-chain, and that primary history still lacks proven exact post-trade probability coverage without heuristic fallback.
 
-1. re-check Panta docs and official playground for historical market-state / trade-price data,
-2. inspect real public Panta trade signatures on Solana,
-3. determine whether transaction instructions, logs or account state provide exact post-trade probability,
-4. compare any reconstructed series with known Panta Signal snapshots/current market detail,
-5. integrate only if the reconstruction is deterministic, accurate and operationally practical.
+This is sufficient research for the hackathon submission. Do not continue to F1v2.3 unless:
 
-Trade-tape YES/NO amounts are historical activity data, not automatically historical prices. No implied-price formula should enter production without protocol-level validation.
+- the submission is otherwise ready, or
+- exact historical reconstruction becomes a direct blocker for judging/demo quality.
+
+The production truthfulness rule remains unchanged: trade-tape YES/NO amounts are activity data, not automatically historical prices, and no heuristic implied-price formula enters the canonical Signal model.
+
+---
+
+# Submission sprint — active roadmap
+
+## Sprint S1 — Judge-first product pass
+**Priority: P0**
+
+Goal: a judge understands the product within the first 30 seconds.
+
+- [ ] Homepage states the problem and value proposition in one screen.
+- [ ] Signal Feed remains the hero capability; no research/debug concepts on the first screen.
+- [ ] One clearly active live market demonstrates current probability + activity + freshness.
+- [ ] Market detail explains where the data comes from and distinguishes Panta API, durable history and Solana evidence.
+- [ ] Remove or demote UI that looks unfinished, empty, duplicated or non-essential.
+
+## Sprint S2 — SolanaCZE proof
+**Priority: P0**
+
+Goal: make meaningful Solana usage visible and auditable without turning the project into a wallet-engineering project.
+
+- [ ] Show the Panta/Solana program relationship clearly in the product or demo.
+- [ ] Surface a real public Solana transaction/signature and Explorer path where available.
+- [ ] Demonstrate that Panta market activity is verifiably on-chain.
+- [ ] Keep the existing non-custodial quote/build/sign/submit path intact.
+- [ ] A real wallet transaction is optional until it is explicitly approved; do not block the submission on spending funds if the read-only on-chain proof tells the product story sufficiently.
+
+## Sprint S3 — Submission packaging
+**Priority: P0**
+
+- [ ] Final production smoke on mobile + desktop.
+- [ ] README trimmed to the competition story and reproducible setup.
+- [ ] 60–120 second silent/low-voice demo with English on-screen captions.
+- [ ] Prepare one core project description, then adapt only the framing for SolanaCZE, Colosseum and Panta.
+- [ ] Capture production URL, GitHub URL, screenshots and transaction/on-chain evidence.
+- [ ] Submit SolanaCZE and Colosseum first; submit Panta sidetrack from the same release candidate.
+
+## Sprint S4 — Only after submission blockers are cleared
+**Priority: P2**
+
+- Function 1 v2.3+ historical reconstruction.
+- Additional wallet intelligence.
+- Advanced charts / analytics.
+- Scheduler improvements beyond what is required for a stable demo.
+- Any redesign not tied to judge comprehension or submission requirements.
 
 ### 1. Market Discovery
 - Panta-native market catalog.
