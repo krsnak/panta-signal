@@ -294,6 +294,13 @@ Acceptance gate: the hero can be understood without knowing Panta Signal's inter
 
 Acceptance gate: a judge can click from Panta Signal to a real Panta-related Solana transaction in one action.
 
+**DONE 2026-10-02**
+
+- Added a dedicated `Verified on Solana` block directly below the Signal hero.
+- Linked a Panta mainnet `SecondaryLimitOrder` transaction that was verified through public Solana RPC to Solana Explorer.
+- Added explicit scope language: the link proves public Panta market activity on Solana and does **not** imply that every historical probability point is reconstructed on-chain.
+- Added compact trust labels for `Mainnet`, `SecondaryLimitOrder` and `Public Panta transaction`.
+
 #### S1.4 — Demote Wallet + Execution
 
 - Move Wallet Intelligence below the core Signal + on-chain evidence story.

@@ -158,6 +158,36 @@ export default async function Home({ searchParams }: PageProps) {
           )}
         </div>
 
+        <section className="mt-5 rounded-3xl border border-cyan-300/15 bg-cyan-300/[0.035] p-5 sm:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/75">
+                Verified on Solana
+              </div>
+              <h2 className="mt-2 text-xl font-semibold">
+                Panta market activity is publicly auditable on-chain
+              </h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">
+                This proof links to a real Panta mainnet transaction containing a SecondaryLimitOrder instruction.
+                It verifies public market activity on Solana; it does not claim that every historical probability point shown by Panta Signal is reconstructed on-chain.
+              </p>
+            </div>
+            <a
+              href="https://explorer.solana.com/tx/5sfY2QhPs3X57323BmgGhFf2A7x7gxkn4jBpxHQ8fPDMyq4bfPXvRBqQgrjJqi5w11bx4NcwSpysMdLRBn3roRq1"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/15"
+            >
+              Open Solana transaction ↗
+            </a>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-white/35">
+            <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">Mainnet</span>
+            <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">SecondaryLimitOrder</span>
+            <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">Public Panta transaction</span>
+          </div>
+        </section>
+
         <section className="mt-5 grid gap-5 xl:grid-cols-[1.08fr_.92fr]">
           <div id="signal" className="rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
             <div className="flex items-end justify-between gap-4">
