@@ -318,6 +318,19 @@ S1 is complete.
 
 Next: S3 submission packaging and judge-flow polish.
 
+### Submission Sprint S3 — Packaging
+
+| Task | State | Goal |
+| --- | --- | --- |
+| S3.1 Desktop production smoke | DONE | Production homepage, live registry shortlist, market detail, Solana transaction proof and Panta program proof verified over production HTTP. |
+| S3.2 Mobile visual smoke | TODO | Final visual check at mobile viewport before screenshots/video. |
+| S3.3 Competition README | DONE | README reduced to the product story, architecture, verified Solana relationship, setup and validation. |
+| S3.4 Submission copy | DONE | `SUBMISSION.md` contains core description plus SolanaCZE, Colosseum and Panta-specific framing. |
+| S3.5 Demo script | DONE | `DEMO_SCRIPT.md` contains a 60–90 second silent/low-voice flow with English on-screen captions. |
+| S3.6 Screenshot/evidence capture | TODO | Final desktop/mobile screenshots and selected Explorer proof assets. |
+| S3.7 Demo video | TODO | Record final release candidate; no real transaction required. |
+| S3.8 Final submissions | TODO | Colosseum + SolanaCZE first, then Panta Sidetrack from the same release candidate. |
+
 Production catalog finding — 2026-10-02:
 
 - Current live Panta API returns 7 catalog markets.

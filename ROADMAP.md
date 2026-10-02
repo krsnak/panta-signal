@@ -478,10 +478,10 @@ S2 is complete. Next phase: S3 submission packaging and final judge-flow polish.
 ## Sprint S3 — Submission packaging
 **Priority: P0**
 
-- [ ] Final production smoke on mobile + desktop.
-- [ ] README trimmed to the competition story and reproducible setup.
-- [ ] 60–120 second silent/low-voice demo with English on-screen captions.
-- [ ] Prepare one core project description, then adapt only the framing for SolanaCZE, Colosseum and Panta.
+- [ ] Final production smoke on mobile + desktop. Desktop HTTP/judge-flow smoke complete; mobile visual smoke remains.
+- [x] README trimmed to the competition story and reproducible setup.
+- [ ] 60–120 second silent/low-voice demo with English on-screen captions. Script complete; recording remains.
+- [x] Prepare one core project description, then adapt only the framing for SolanaCZE, Colosseum and Panta.
 - [ ] Capture production URL, GitHub URL, screenshots and transaction/on-chain evidence.
 - [ ] Submit SolanaCZE and Colosseum first; submit Panta sidetrack from the same release candidate.
 
