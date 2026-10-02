@@ -11,21 +11,30 @@ Development is **feature-gated**: one user-facing function is completed and prod
 ## Current release
 
 - Next.js + TypeScript dashboard
-- live market explorer with search/category/phase filters
+- live market explorer with search/category discovery and detail-hydrated market state
 - market detail with YES/NO spot prices and public trade tape
 - read-only Solana wallet positions
-- local 24h probability snapshot history
-- Top Movers derived only from observed snapshots
-- deterministic Signal Insight grounded in stored Panta data
+- durable Neon/Postgres probability snapshot history
+- canonical Signal Feed combining current Panta detail, durable price history and 24h trade activity
+- Top Movers derived only from verified probability observations
+- deterministic Signal Insight grounded in real Panta data
 - 24h YES probability chart once at least two snapshots exist
 - non-custodial Panta primary-buy quote/build/sign/submit/verify flow
 - explicit `Powered by Panta` attribution
 - server-side Panta API client and proxy route
-- live market catalog, categories and filters
+- live market catalog and categories
 - live YES/NO spot prices from Panta market detail
 - safe sample-data fallback when no API key is configured
 
-The current `pk_test_` key returns Panta's sandbox fixture market. In test mode the buy flow can safely demonstrate quote/build responses without broadcasting a mainnet transaction.
+Production uses a live Panta API key server-side. A local test key may still be used for sandbox development, but it is not the production data source.
+
+### Signal Feed historical-data model
+
+Panta provides current market detail plus a public trade tape. This gives Panta Signal immediate access to real 24h activity such as trade count, normalized YES/NO shares, signatures and last-trade time.
+
+Panta's public trade rows do not currently expose an explicit historical post-trade YES/NO spot probability. Therefore Function 1 v1 uses durable Postgres snapshots of live market detail for historical probability movement.
+
+The next planned investigation, **Function 1 v2 — Historical Price Reconstruction**, will determine whether those existing trade signatures and Solana on-chain data can reconstruct historical probabilities retroactively. It will be implemented only if the result is demonstrably exact/reliable enough to improve on snapshot-only history. See [FEATURE_STATUS.md](./FEATURE_STATUS.md).
 
 ## Local setup
 
@@ -77,11 +86,11 @@ No seed phrase or private key is ever requested or stored.
 
 ## Next implementation slices
 
-1. finish catalog-first / async spot-price hydration so live RPC latency cannot block the full page
-2. replace ephemeral history storage with durable storage and scheduled collection
-3. complete and prove the real Phantom → Solana → Panta transaction golden path
-4. add automated contract/integration/E2E coverage for documented Panta success and failure shapes
-5. finish Panta-native market workspace UX and record the competition demo
+1. Function 1 v2 research: determine whether historical YES/NO probability can be reconstructed from Panta trade signatures / Solana state
+2. if validated, add retrospective price-history backfill to the canonical Signal model
+3. only after the v2 decision, explicitly start Function 2 — Wallet Intelligence
+4. later complete and prove the real Phantom → Solana → Panta transaction golden path
+5. finish submission/demo packaging after product functions pass their own gates
 
 ## Submission checklist
 
@@ -91,8 +100,9 @@ No seed phrase or private key is ever requested or stored.
 - [x] read-only wallet positions
 - [x] non-custodial Panta transaction workflow implemented
 - [ ] real user-approved Solana transaction proven end-to-end with Explorer receipt
-- [ ] durable market history and scheduled snapshot collector
-- [ ] automated Panta contract/integration tests
+- [x] durable market history in Postgres
+- [x] automated Signal/Panta normalization and behavior tests
+- [ ] stronger reliable scheduled collection mechanism if still needed after Function 1 v2 history research
 - [ ] SolanaCZE submission
 - [x] clear `Powered by Panta` attribution
 - [x] README and architecture notes

@@ -146,6 +146,85 @@ Existing work may remain in the codebase, but no additional Function 2 developme
 
 ---
 
+## Function 1 v2 — Historical Price Reconstruction
+
+**NEXT INVESTIGATION — not yet implemented**
+
+### Why this exists
+
+Function 1 v1 is production-complete, but its two data dimensions have different historical depth:
+
+- **trade activity history** is already available from Panta's public trade tape for the previous 24 hours,
+- **probability / price history** is currently produced from Panta Signal's own durable Postgres snapshots collected from live market detail.
+
+This means a newly observed market can immediately show real recent trades, traded YES/NO shares and last-trade time, while a true 6h / 24h probability movement requires enough Panta Signal snapshots to have accumulated.
+
+The next work is therefore **not** to redesign Signal Feed again. It is to investigate whether historical probability can be reconstructed retrospectively from data that already exists.
+
+### Research question
+
+Can Panta Signal reconstruct an exact or sufficiently reliable historical YES/NO probability series from:
+
+1. Panta public trade-tape rows,
+2. the Solana transaction signatures contained in those rows,
+3. the corresponding on-chain transaction instructions / logs / account changes,
+4. Panta program / market state visible on Solana,
+5. or another documented Panta endpoint that exposes historical state?
+
+### Important current fact
+
+The public Panta trade tape gives useful historical activity fields such as:
+
+- transaction signature,
+- block time,
+- wallet,
+- primary / secondary flag,
+- YES amount,
+- NO amount,
+- fee.
+
+The YES/NO amounts are 1e6 base units and are already normalized by Panta Signal.
+
+However, the trade-tape response **does not currently expose an explicit historical post-trade YES/NO spot probability field**. Therefore trade amounts alone must not be treated as historical price.
+
+### v2 research plan
+
+Perform the following in short, documented tasks:
+
+| Task | State | Goal |
+| --- | --- | --- |
+| F1v2.1 Verify all official historical-data surfaces | NEXT | Re-check current Panta docs and official playground for any historical price/state endpoint or trade-price field. |
+| F1v2.2 Inspect real trade transactions on Solana | TODO | Use existing public trade signatures read-only; inspect instructions, logs, account changes and touched market accounts. |
+| F1v2.3 Test historical price reconstruction | TODO | Determine whether an exact YES/NO probability can be derived at each trade timestamp. |
+| F1v2.4 Validate against known observations | TODO | Compare reconstructed values with our durable snapshots/current Panta detail; quantify mismatch. |
+| F1v2.5 Decide source hierarchy | TODO | Decide whether reconstruction is exact enough to supplement/replace snapshot-only movement history. |
+| F1v2.6 Implement only if superior | TODO | Backfill history and integrate it into the canonical Signal model only if accuracy/reliability is demonstrated. |
+| F1v2.7 Production verification | TODO | Re-run tests, production smoke and Signal Feed consistency audit. |
+
+### Decision gate
+
+Do **not** implement reconstructed historical prices merely because a plausible formula can be invented.
+
+Implementation proceeds only if the research establishes:
+
+- a deterministic source of historical price/probability,
+- clear protocol semantics,
+- reproducible results across multiple real trades,
+- acceptable agreement with known Panta observations,
+- practical API/RPC cost and latency,
+- no dependence on private keys or transaction signing.
+
+If those conditions are not met, retain the current architecture:
+
+- Panta trade tape for immediate historical **activity**,
+- durable Panta Signal snapshots for historical **probability movement**.
+
+### Safety boundary
+
+All v2 investigation is read-only. Public Solana transaction signatures/accounts may be inspected. No wallet signing, transaction broadcast, market creation or financial action is required for this investigation.
+
+---
+
 ## Function 3 — Solana Execution
 
 **PAUSED until Function 2 is DONE.**

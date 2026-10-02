@@ -6,7 +6,9 @@
 
 **Function 1 — Signal Feed: COMPLETE (2026-10-02)**
 
-Function 1 passed its functional, production, reliability and desktop browser audit. No next function is considered active until explicitly started under the feature-by-feature workflow.
+Function 1 passed its functional, production, reliability and desktop browser audit.
+
+**Next planned work is a Function 1 v2 research pass: Historical Price Reconstruction.** It must first determine whether Panta trade signatures / Solana on-chain state can provide exact historical probability points retroactively. Implementation is conditional on evidence that this is more reliable/useful than the existing durable-snapshot model. Function 2 remains paused during this investigation.
 
 Signal Feed must combine:
 
@@ -40,13 +42,17 @@ Completed:
 - quote state is explicit: live / cached / unavailable / resolved
 - successful UI quote hydration also records authoritative durable snapshots as a collector fallback
 - guarded create-market bootstrap API is prepared for a controlled primary-market demo, but remains disabled by default
+- persistent Neon/Postgres history is connected in production
+- production Signal Feed uses a canonical signal model combining live detail, durable probability observations and 24h trade activity
+- public trade amounts are normalized from Panta's 1e6 base units
+- production Signal Feed and market detail share identical signal facts/explanations
+- Function 1 production audit completed with 35/35 tests passing at the final v1 gate
 
 External integration blockers:
-- connect a persistent Postgres database and provide `DATABASE_URL`
-- configure `CRON_SECRET` and production collection schedule after the database is live
 - perform one explicit user-approved real Phantom transaction to prove the full mainnet golden path
+- GitHub scheduled collection has been unreliable; production history remains durable through Postgres and successful live quote/detail observations, but a stronger scheduler may still be desirable before final submission
 
-The current production build must not be considered signal-complete until durable history is connected and the collector has accumulated real observations.
+Function 1 v1 is signal-complete under its documented acceptance criteria. Its current limitation is historical depth: 24h trade activity is immediately available from Panta, while 24h probability movement requires either accumulated Panta Signal snapshots or a future validated retrospective reconstruction path.
 
 ## Mission
 
@@ -174,6 +180,20 @@ It should not primarily answer:
 
 Top Movers and Signal Pulse must only appear when durable real history supports them.
 Until enough observations exist, the product must show an explicit data-collection state rather than fabricate movement or promote an arbitrary market as a signal.
+
+### Function 1 v2 research — retrospective history
+
+The next Signal Feed investigation asks whether historical probability points can be recovered immediately instead of waiting for our own snapshot window to fill.
+
+Research order:
+
+1. re-check Panta docs and official playground for historical market-state / trade-price data,
+2. inspect real public Panta trade signatures on Solana,
+3. determine whether transaction instructions, logs or account state provide exact post-trade probability,
+4. compare any reconstructed series with known Panta Signal snapshots/current market detail,
+5. integrate only if the reconstruction is deterministic, accurate and operationally practical.
+
+Trade-tape YES/NO amounts are historical activity data, not automatically historical prices. No implied-price formula should enter production without protocol-level validation.
 
 ### 1. Market Discovery
 - Panta-native market catalog.
