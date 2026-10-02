@@ -2,6 +2,7 @@ import "server-only";
 
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import postgres from "postgres";
 import type { PantaMarket } from "@/lib/panta";
 
 export type MarketHistoryPoint = {
@@ -32,6 +33,95 @@ const MAX_HISTORY_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_POINTS = 5000;
 
 let writeQueue: Promise<void> = Promise.resolve();
+let sqlClient: ReturnType<typeof postgres> | null = null;
+let schemaReady: Promise<void> | null = null;
+
+function hasDatabase() {
+  return Boolean(process.env.DATABASE_URL?.trim());
+}
+
+function db() {
+  if (sqlClient) return sqlClient;
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  if (!databaseUrl) throw new Error("DATABASE_URL is not configured");
+  sqlClient = postgres(databaseUrl, {
+    max: 1,
+    prepare: false,
+    idle_timeout: 20,
+    connect_timeout: 10,
+  });
+  return sqlClient;
+}
+
+async function ensureSchema() {
+  if (!hasDatabase()) return;
+  if (!schemaReady) {
+    schemaReady = (async () => {
+      const sql = db();
+      await sql`
+        create table if not exists market_snapshots (
+          id bigserial primary key,
+          market_id text not null,
+          title text not null,
+          category text not null,
+          yes_probability double precision not null,
+          no_probability double precision,
+          volume_usdc double precision not null default 0,
+          captured_at timestamptz not null default now()
+        )
+      `;
+      await sql`
+        create index if not exists market_snapshots_market_time_idx
+        on market_snapshots (market_id, captured_at desc)
+      `;
+      await sql`
+        create index if not exists market_snapshots_time_idx
+        on market_snapshots (captured_at desc)
+      `;
+    })();
+  }
+  await schemaReady;
+}
+
+function rowToPoint(row: {
+  market_id: string;
+  title: string;
+  category: string;
+  yes_probability: number;
+  no_probability: number | null;
+  volume_usdc: number;
+  captured_at: Date | string;
+}): MarketHistoryPoint {
+  return {
+    marketId: row.market_id,
+    title: row.title,
+    category: row.category,
+    yesProbability: Number(row.yes_probability),
+    noProbability: row.no_probability === null ? null : Number(row.no_probability),
+    volumeUsdc: Number(row.volume_usdc),
+    capturedAt: new Date(row.captured_at).getTime(),
+  };
+}
+
+async function readDatabaseHistory(cutoffMs: number, marketId?: string) {
+  await ensureSchema();
+  const sql = db();
+  const cutoff = new Date(cutoffMs);
+  const rows = marketId
+    ? await sql`
+        select market_id, title, category, yes_probability, no_probability, volume_usdc, captured_at
+        from market_snapshots
+        where market_id = ${marketId} and captured_at >= ${cutoff}
+        order by captured_at asc
+      `
+    : await sql`
+        select market_id, title, category, yes_probability, no_probability, volume_usdc, captured_at
+        from market_snapshots
+        where captured_at >= ${cutoff}
+        order by captured_at asc
+      `;
+  return rows.map((row) => rowToPoint(row as Parameters<typeof rowToPoint>[0]));
+}
 
 function historyPath() {
   const base = process.env.VERCEL
@@ -72,6 +162,44 @@ export async function recordMarketSnapshots(markets: PantaMarket[]) {
   );
   if (eligible.length === 0) return;
 
+  if (hasDatabase()) {
+    await ensureSchema();
+    const sql = db();
+    const minAllowed = new Date(now - MIN_SNAPSHOT_INTERVAL_MS);
+    const cutoff = new Date(now - MAX_HISTORY_AGE_MS);
+
+    for (const market of eligible) {
+      await sql`
+        insert into market_snapshots (
+          market_id,
+          title,
+          category,
+          yes_probability,
+          no_probability,
+          volume_usdc,
+          captured_at
+        )
+        select
+          ${market.id},
+          ${market.title},
+          ${market.category},
+          ${market.yesProbability as number},
+          ${market.noProbability},
+          ${market.volumeUsdc},
+          ${new Date(now)}
+        where not exists (
+          select 1
+          from market_snapshots
+          where market_id = ${market.id}
+            and captured_at >= ${minAllowed}
+        )
+      `;
+    }
+
+    await sql`delete from market_snapshots where captured_at < ${cutoff}`;
+    return;
+  }
+
   writeQueue = writeQueue.then(async () => {
     const history = await readHistory();
     const cutoff = now - MAX_HISTORY_AGE_MS;
@@ -104,9 +232,13 @@ export async function recordMarketSnapshots(markets: PantaMarket[]) {
 }
 
 export async function getMarketHistory(marketId: string, hours = 24) {
+  const cutoff = Date.now() - Math.max(hours, 1) * 60 * 60 * 1000;
+  if (hasDatabase()) {
+    return readDatabaseHistory(cutoff, marketId);
+  }
+
   await writeQueue;
   const history = await readHistory();
-  const cutoff = Date.now() - Math.max(hours, 1) * 60 * 60 * 1000;
   return history.points
     .filter((point) => point.marketId === marketId && point.capturedAt >= cutoff)
     .sort((a, b) => a.capturedAt - b.capturedAt);
@@ -127,15 +259,19 @@ function buildInsight(baseline: MarketHistoryPoint, latest: MarketHistoryPoint) 
 }
 
 export async function getTopMovers(markets: PantaMarket[], hours = 24): Promise<MarketMover[]> {
-  await writeQueue;
-  const history = await readHistory();
   const cutoff = Date.now() - Math.max(hours, 1) * 60 * 60 * 1000;
+  const historyPoints = hasDatabase()
+    ? await readDatabaseHistory(cutoff)
+    : await (async () => {
+        await writeQueue;
+        const history = await readHistory();
+        return history.points.filter((point) => point.capturedAt >= cutoff);
+      })();
 
   const movers: MarketMover[] = [];
   for (const market of markets) {
-    if (market.yesProbability === null) continue;
-    const points = history.points
-      .filter((point) => point.marketId === market.id && point.capturedAt >= cutoff)
+    const points = historyPoints
+      .filter((point) => point.marketId === market.id)
       .sort((a, b) => a.capturedAt - b.capturedAt);
     if (points.length < 2) continue;
 
@@ -143,7 +279,12 @@ export async function getTopMovers(markets: PantaMarket[], hours = 24): Promise<
     const latest = points[points.length - 1];
     const changePoints = (latest.yesProbability - baseline.yesProbability) * 100;
     movers.push({
-      market,
+      market: {
+        ...market,
+        yesProbability: latest.yesProbability,
+        noProbability: latest.noProbability,
+        volumeUsdc: latest.volumeUsdc,
+      },
       baseline,
       latest,
       changePoints,
