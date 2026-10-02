@@ -6,10 +6,8 @@ import {
   getRecentlyObservedMarkets,
   getSignalCoverage,
 } from "@/lib/history";
-import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
 import PrimarySignalCard from "@/components/PrimarySignalCard";
-import SignalList from "@/components/SignalList";
 
 type PageProps = {
   searchParams: Promise<{
@@ -86,14 +84,13 @@ export default async function Home({ searchParams }: PageProps) {
         ? judgeFacingMarkets
         : judgeFacingMarkets.slice(0, 6)
       : titledMarkets;
+  const liveMarkets = visibleMarkets.filter(
+    (market) => market.phase === "primary" || market.phase === "secondary",
+  );
   const primarySignalMarket =
     observedMarkets[0] ??
     topMovers[0]?.market ??
     visibleMarkets[0] ??
-    null;
-  const actionableMarket =
-    observedMarkets.find((market) => market.phase === "primary") ??
-    titledMarkets.find((market) => market.phase === "primary") ??
     null;
 
   return (
@@ -112,8 +109,6 @@ export default async function Home({ searchParams }: PageProps) {
         <div className="mx-auto flex max-w-[1480px] items-center gap-2 overflow-x-auto px-5 pb-3 lg:px-8">
           {[
             ["Signal Feed", "#featured"],
-            ["More signals", "#signal"],
-            ["Tools", "#tools"],
             ["Markets", "#live"],
           ].map(([label, href], index) => (
             <a
@@ -134,24 +129,24 @@ export default async function Home({ searchParams }: PageProps) {
               Panta intelligence layer on Solana
             </div>
             <h1 className="max-w-4xl text-3xl font-semibold tracking-tight sm:text-4xl">
-              See what changed on Panta, whether real trading supports it, and verify the activity on Solana.
+              Panta Signal turns live prediction markets into clear, verifiable signals.
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">
-              Panta Signal combines live market probabilities, durable observations and public trade activity into one evidence-backed signal — without inventing movement when the data is not there.
+              We detect what changed, check whether public trading activity supports it, and link the evidence back to Solana.
             </p>
           </div>
           <div className="grid min-w-[280px] gap-2 text-xs sm:grid-cols-3 lg:grid-cols-1">
             <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
-              <div className="font-medium text-white/75">Live Panta market data</div>
-              <div className="mt-1 text-white/30">Current YES/NO + market state</div>
+              <div className="font-medium text-white/75">1 · Detect change</div>
+              <div className="mt-1 text-white/30">Live YES/NO probability and movement</div>
             </div>
             <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
-              <div className="font-medium text-white/75">Durable observations</div>
-              <div className="mt-1 text-white/30">{signalCoverage.observations} snapshots across {signalCoverage.marketsObserved} market{signalCoverage.marketsObserved === 1 ? "" : "s"}</div>
+              <div className="font-medium text-white/75">2 · Validate activity</div>
+              <div className="mt-1 text-white/30">Public trades + {signalCoverage.observations} stored observations</div>
             </div>
             <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
-              <div className="font-medium text-white/75">Solana-verifiable activity</div>
-              <div className="mt-1 text-white/30">Public Panta trades and signatures</div>
+              <div className="font-medium text-white/75">3 · Verify on Solana</div>
+              <div className="mt-1 text-white/30">Open real transaction signatures</div>
             </div>
           </div>
         </section>
@@ -214,102 +209,30 @@ export default async function Home({ searchParams }: PageProps) {
           </div>
         </section>
 
-        <section id="signal" className="mt-5 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
-          <div>
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-white/30">More signals</div>
-                <h2 className="mt-2 text-2xl font-semibold">Observed signal queue</h2>
-                <p className="mt-2 text-sm text-white/40">Movement first, then real trading activity, then flat/collecting markets. Resolved markets are excluded.</p>
-              </div>
-              <span className="text-xs text-white/30">24h</span>
-            </div>
-
-            <div className="mt-5">
-              <SignalList excludeMarketId={primarySignalMarket?.id} />
-            </div>
-          </div>
-        </section>
-
-        <section id="tools" className="mt-5 rounded-3xl border border-[#20282e] bg-[#0c1115] p-5 sm:p-6">
-          <div className="mb-5">
-            <div className="text-xs uppercase tracking-[0.18em] text-white/25">Optional tools</div>
-            <h2 className="mt-2 text-xl font-semibold">Wallet lookup and non-custodial execution</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/35">
-              These tools extend the signal workflow, but they are not required to understand or verify the core market signal.
-            </p>
-          </div>
-          <div className="grid gap-5 xl:grid-cols-2">
-            <div id="wallet" className="rounded-2xl border border-[#20282e] bg-[#0f1418] p-5">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/30">Wallet Intelligence</div>
-              <h3 className="mt-2 text-xl font-semibold">Your Panta exposure</h3>
-              <p className="mt-2 text-sm leading-6 text-white/45">Read-only Solana position lookup. No seed phrase or private key is requested.</p>
-              <div className="mt-5"><WalletPositionsLookup /></div>
-            </div>
-
-            <div id="execute" className="rounded-2xl border border-[#20282e] bg-[#0f1418] p-5">
-              <div className="text-xs uppercase tracking-[0.18em] text-white/30">Optional Solana Execution</div>
-              <h3 className="mt-2 text-xl font-semibold">Act on a signal, non-custodially</h3>
-              <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/55">
-                {["Connect Phantom", "Panta quote", "Build", "Sign on Solana", "Panta verify"].map((step, index) => (
-                  <span key={step} className="rounded-full border border-[#273139] bg-[#0b0f12] px-3 py-2">{index + 1}. {step}</span>
-                ))}
-              </div>
-              {actionableMarket ? (
-                <Link href={marketDetailHref(actionableMarket)} className="mt-5 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10]">
-                  Open execution workspace →
-                </Link>
-              ) : (
-                <div className="mt-5 flex items-start gap-2 rounded-xl border border-white/10 bg-black/15 px-4 py-3 text-xs leading-5 text-white/40">
-                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-white/30" />
-                  <span>No primary market is currently available in the live Panta catalog. The execution path remains implemented and activates when a primary market is available.</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {visibleMarkets.length > 0 && (
+        {liveMarkets.length > 0 && (
           <section id="live" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0d1216] p-5 sm:p-6">
-            <form className="mb-6 grid gap-3 rounded-2xl border border-[#20282e] bg-[#0b0f12] p-3 md:grid-cols-[1fr_200px_auto]" action="/">
-              <input
-                name="q"
-                defaultValue={params.q || ""}
-                placeholder="Search title, description or category"
-                className="rounded-xl border border-[#273139] bg-[#090d10] px-4 py-3 text-sm outline-none transition focus:border-white/25 placeholder:text-white/25"
-              />
-              <select name="category" defaultValue={params.category || ""} className="rounded-xl border border-[#273139] bg-[#090d10] px-4 py-3 text-sm">
-                <option value="">All categories</option>
-                {snapshot.categories.map((category) => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-              <button className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">Search markets</button>
-            </form>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Market Explorer</div>
-                <h2 className="mt-2 text-xl font-semibold">Explore the live Panta catalog</h2>
+                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Live now</div>
+                <h2 className="mt-2 text-xl font-semibold">Active Panta markets</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
-                  Signals come first. This supporting explorer prioritizes observed and priced markets by default; search and category filters still query the full live catalog.
+                  Only markets that are currently in primary or secondary trading are shown here. Resolved markets are excluded from the judge-facing homepage.
                 </p>
               </div>
               <span className="text-xs text-white/25">
-                {hasExplicitCatalogQuery
-                  ? `${visibleMarkets.length} matching markets`
-                  : `${visibleMarkets.length} highlighted · ${titledMarkets.length} total`}
+                {liveMarkets.length} live · {titledMarkets.length} total in Panta catalog
               </span>
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {visibleMarkets.map((market) => (
+              {liveMarkets.map((market) => (
                 <Link
                   key={market.id}
                   href={marketDetailHref(market)}
                   className="group overflow-hidden rounded-2xl border border-[#20282e] bg-[#0b0f12] transition hover:-translate-y-0.5 hover:border-[#303b43] hover:bg-[#12181d]"
                 >
                   <div className="relative aspect-[16/7.5] overflow-hidden bg-[#151b20]">
-                    {market.imageUrl ? (
+                    {market.imageUrl?.includes("res.cloudinary.com") ? (
                       <Image
                         src={market.imageUrl}
                         alt=""
@@ -318,7 +241,9 @@ export default async function Home({ searchParams }: PageProps) {
                         sizes="(max-width: 768px) 100vw, 33vw"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(148,163,184,.14),transparent_48%)]" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_30%_30%,rgba(148,163,184,.14),transparent_48%)]">
+                        <span className="text-xs uppercase tracking-[0.18em] text-white/20">Panta market</span>
+                      </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f12] via-transparent to-transparent" />
                     <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/70 backdrop-blur">

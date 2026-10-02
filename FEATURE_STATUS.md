@@ -311,8 +311,18 @@ S1 is complete.
 | Task | State | Goal |
 | --- | --- | --- |
 | S2.1 Production judge-flow verification | DONE | Production homepage and live market detail verified after S1; real Solana trade signatures and Explorer paths are present. |
-| S2.2 Panta program relationship | NEXT | Make the Panta/Solana program relationship explicit to the judge without requiring repository knowledge. |
-| S2.3 Execution-path integrity check | TODO | Confirm existing quote/build/sign/submit path remains intact; no real spend required. |
+| S2.2 Homepage clarity correction | DONE | Competition homepage reduced to one product story: detect change → validate activity → verify on Solana. Resolved catalog cards and optional wallet/execution blocks removed from the judge-facing homepage. |
+| S2.3 Panta program relationship | NEXT | Make the Panta/Solana program relationship explicit to the judge without requiring repository knowledge. |
+| S2.4 Execution-path integrity check | TODO | Confirm existing quote/build/sign/submit path remains intact; no real spend required. |
+
+Production catalog finding — 2026-10-02:
+
+- Current live Panta API returns 7 catalog markets.
+- 1 market is currently active (`secondary`): Manchester United vs Spurs.
+- 6 markets are already `resolved`.
+- This is upstream Panta catalog state, not a local filtering bug.
+- Judge-facing homepage now shows only `primary` / `secondary` markets.
+- A broken `$zcat` card image came from a non-Cloudinary Google image URL while Next Image is configured only for Cloudinary. Resolved cards are no longer shown on the homepage, and non-Cloudinary images fall back to a safe placeholder instead of a broken image.
 
 Audit conclusion:
 

@@ -400,6 +400,30 @@ Goal: make meaningful Solana usage visible and auditable without turning the pro
 
 Next S2 task: make the public Panta program relationship explicit enough that a SolanaCZE judge can see which on-chain program/activity the product is observing without reading repository documentation.
 
+### S2 homepage clarity correction — 2026-10-02
+
+**DONE**
+
+The production screenshot exposed a product-story problem: technically valid modules were presented together as a dense dashboard, and the catalog visually over-emphasized resolved 0/100 markets.
+
+Correction:
+
+- Homepage now explains the product in three explicit steps:
+  1. Detect change
+  2. Validate activity
+  3. Verify on Solana
+- Removed the empty `More signals` section from the competition homepage.
+- Removed Wallet Intelligence and Solana Execution from the homepage. Their code is preserved; execution remains available on market detail when applicable.
+- Homepage catalog now displays only active `primary` / `secondary` Panta markets.
+- Resolved markets are no longer a judge-facing homepage feature.
+- Non-Cloudinary market images use a safe placeholder instead of rendering a broken Next Image.
+
+Current upstream constraint:
+
+- Panta API currently exposes 7 markets to this production integration.
+- Only 1 is active; the other 6 are resolved.
+- Therefore the competition UI must not pretend there is a broad live market set when the upstream catalog does not currently provide one.
+
 ## Sprint S3 — Submission packaging
 **Priority: P0**
 
