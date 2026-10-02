@@ -8,7 +8,11 @@ import type { PantaMarket } from "@/lib/panta";
 export type MarketHistoryPoint = {
   marketId: string;
   title: string;
+  description: string;
   category: string;
+  phase: string;
+  status: string;
+  imageUrl: string | null;
   yesProbability: number;
   noProbability: number | null;
   volumeUsdc: number;
@@ -71,7 +75,11 @@ async function ensureSchema() {
           id bigserial primary key,
           market_id text not null,
           title text not null,
+          description text not null default '',
           category text not null,
+          phase text not null default 'unknown',
+          status text not null default 'unknown',
+          image_url text,
           yes_probability double precision not null,
           no_probability double precision,
           volume_usdc double precision not null default 0,
@@ -82,6 +90,10 @@ async function ensureSchema() {
         create index if not exists market_snapshots_market_time_idx
         on market_snapshots (market_id, captured_at desc)
       `;
+      await sql`alter table market_snapshots add column if not exists description text not null default ''`;
+      await sql`alter table market_snapshots add column if not exists phase text not null default 'unknown'`;
+      await sql`alter table market_snapshots add column if not exists status text not null default 'unknown'`;
+      await sql`alter table market_snapshots add column if not exists image_url text`;
       await sql`
         create index if not exists market_snapshots_time_idx
         on market_snapshots (captured_at desc)
@@ -94,7 +106,11 @@ async function ensureSchema() {
 function rowToPoint(row: {
   market_id: string;
   title: string;
+  description: string;
   category: string;
+  phase: string;
+  status: string;
+  image_url: string | null;
   yes_probability: number;
   no_probability: number | null;
   volume_usdc: number;
@@ -103,7 +119,11 @@ function rowToPoint(row: {
   return {
     marketId: row.market_id,
     title: row.title,
+    description: row.description,
     category: row.category,
+    phase: row.phase,
+    status: row.status,
+    imageUrl: row.image_url,
     yesProbability: Number(row.yes_probability),
     noProbability: row.no_probability === null ? null : Number(row.no_probability),
     volumeUsdc: Number(row.volume_usdc),
@@ -117,13 +137,13 @@ async function readDatabaseHistory(cutoffMs: number, marketId?: string) {
   const cutoff = new Date(cutoffMs);
   const rows = marketId
     ? await sql`
-        select market_id, title, category, yes_probability, no_probability, volume_usdc, captured_at
+        select market_id, title, description, category, phase, status, image_url, yes_probability, no_probability, volume_usdc, captured_at
         from market_snapshots
         where market_id = ${marketId} and captured_at >= ${cutoff}
         order by captured_at asc
       `
     : await sql`
-        select market_id, title, category, yes_probability, no_probability, volume_usdc, captured_at
+        select market_id, title, description, category, phase, status, image_url, yes_probability, no_probability, volume_usdc, captured_at
         from market_snapshots
         where captured_at >= ${cutoff}
         order by captured_at asc
@@ -181,7 +201,11 @@ export async function recordMarketSnapshots(markets: PantaMarket[]) {
         insert into market_snapshots (
           market_id,
           title,
+          description,
           category,
+          phase,
+          status,
+          image_url,
           yes_probability,
           no_probability,
           volume_usdc,
@@ -190,7 +214,11 @@ export async function recordMarketSnapshots(markets: PantaMarket[]) {
         select
           ${market.id},
           ${market.title},
+          ${market.description},
           ${market.category},
+          ${market.phase},
+          ${market.status},
+          ${market.imageUrl},
           ${market.yesProbability as number},
           ${market.noProbability},
           ${market.volumeUsdc},
@@ -222,7 +250,11 @@ export async function recordMarketSnapshots(markets: PantaMarket[]) {
       recent.push({
         marketId: market.id,
         title: market.title,
+        description: market.description,
         category: market.category,
+        phase: market.phase,
+        status: market.status,
+        imageUrl: market.imageUrl,
         yesProbability: market.yesProbability as number,
         noProbability: market.noProbability,
         volumeUsdc: market.volumeUsdc,
@@ -292,6 +324,56 @@ export async function getTopMovers(markets: PantaMarket[], hours = 24): Promise<
         yesProbability: latest.yesProbability,
         noProbability: latest.noProbability,
         volumeUsdc: latest.volumeUsdc,
+      },
+      baseline,
+      latest,
+      changePoints,
+      insight: buildInsight(baseline, latest),
+    });
+  }
+
+  return movers
+    .sort((a, b) => Math.abs(b.changePoints) - Math.abs(a.changePoints))
+    .slice(0, 5);
+}
+
+export async function getPersistentTopMovers(hours = 24): Promise<MarketMover[]> {
+  const cutoff = Date.now() - Math.max(hours, 1) * 60 * 60 * 1000;
+  const historyPoints = hasDatabase()
+    ? await readDatabaseHistory(cutoff)
+    : await (async () => {
+        await writeQueue;
+        const history = await readHistory();
+        return history.points.filter((point) => point.capturedAt >= cutoff);
+      })();
+
+  const grouped = new Map<string, MarketHistoryPoint[]>();
+  for (const point of historyPoints) {
+    const points = grouped.get(point.marketId) ?? [];
+    points.push(point);
+    grouped.set(point.marketId, points);
+  }
+
+  const movers: MarketMover[] = [];
+  for (const [marketId, points] of grouped) {
+    const ordered = points.sort((a, b) => a.capturedAt - b.capturedAt);
+    if (ordered.length < 2) continue;
+
+    const baseline = ordered[0];
+    const latest = ordered[ordered.length - 1];
+    const changePoints = (latest.yesProbability - baseline.yesProbability) * 100;
+    movers.push({
+      market: {
+        id: marketId,
+        title: latest.title,
+        description: latest.description,
+        category: latest.category,
+        phase: latest.phase,
+        status: latest.status,
+        yesProbability: latest.yesProbability,
+        noProbability: latest.noProbability,
+        volumeUsdc: latest.volumeUsdc,
+        imageUrl: latest.imageUrl,
       },
       baseline,
       latest,

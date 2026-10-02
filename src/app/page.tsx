@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getMarketSnapshot } from "@/lib/panta";
-import { getTopMovers, recordMarketSnapshots } from "@/lib/history";
+import { getPersistentTopMovers } from "@/lib/history";
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
 
@@ -61,10 +61,7 @@ export default async function Home({ searchParams }: PageProps) {
     status: params.status,
     limit: 20,
   });
-  if (snapshot.source === "panta") {
-    await recordMarketSnapshots(snapshot.markets);
-  }
-  const topMovers = await getTopMovers(snapshot.markets);
+  const topMovers = await getPersistentTopMovers();
   const titledMarkets = snapshot.markets.filter(
     (market) => !market.title.startsWith("Market "),
   );
