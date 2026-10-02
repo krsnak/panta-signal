@@ -526,10 +526,43 @@ export async function getWalletPositions(wallet: string): Promise<PantaPosition[
   } catch {
     throw new Error("Invalid Solana wallet address");
   }
-  const result = await pantaFetch<PositionsResponse>(
-    `positions/?wallet=${encodeURIComponent(trimmed)}`,
-    { timeoutMs: 7000, retries: 1, noStore: true },
-  );
+  const path = `positions/?wallet=${encodeURIComponent(trimmed)}`;
+  let result: PositionsResponse;
+  try {
+    result = await pantaFetch<PositionsResponse>(path, {
+      timeoutMs: 7000,
+      retries: 1,
+      noStore: true,
+    });
+  } catch (error) {
+    if (
+      error instanceof PantaApiError &&
+      error.status === 400 &&
+      error.code === "INVALID_MARKET_PARAMS"
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      try {
+        result = await pantaFetch<PositionsResponse>(path, {
+          timeoutMs: 7000,
+          retries: 0,
+          noStore: true,
+        });
+      } catch (retryError) {
+        if (
+          retryError instanceof PantaApiError &&
+          retryError.status === 400 &&
+          retryError.code === "INVALID_MARKET_PARAMS"
+        ) {
+          throw new Error(
+            "Panta positions are temporarily unavailable. Please retry in a moment.",
+          );
+        }
+        throw retryError;
+      }
+    } else {
+      throw error;
+    }
+  }
   return (result.positions ?? []).map((position) => ({
     marketId: position.marketId ?? "",
     category: position.category ?? null,
