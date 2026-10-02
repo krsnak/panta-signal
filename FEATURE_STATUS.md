@@ -193,8 +193,8 @@ Perform the following in short, documented tasks:
 
 | Task | State | Goal |
 | --- | --- | --- |
-| F1v2.1 Verify all official historical-data surfaces | NEXT | Re-check current Panta docs and official playground for any historical price/state endpoint or trade-price field. |
-| F1v2.2 Inspect real trade transactions on Solana | TODO | Use existing public trade signatures read-only; inspect instructions, logs, account changes and touched market accounts. |
+| F1v2.1 Verify all official historical-data surfaces | DONE | Current official playground/API surface exposes current market prices and historical trade activity, but no documented historical spot-price/state series or trade-row price field. |
+| F1v2.2 Inspect real trade transactions on Solana | NEXT | Use existing public trade signatures read-only; inspect instructions, logs, account changes and touched market accounts. |
 | F1v2.3 Test historical price reconstruction | TODO | Determine whether an exact YES/NO probability can be derived at each trade timestamp. |
 | F1v2.4 Validate against known observations | TODO | Compare reconstructed values with our durable snapshots/current Panta detail; quantify mismatch. |
 | F1v2.5 Decide source hierarchy | TODO | Decide whether reconstruction is exact enough to supplement/replace snapshot-only movement history. |
@@ -204,6 +204,34 @@ Perform the following in short, documented tasks:
 ### Decision gate
 
 Do **not** implement reconstructed historical prices merely because a plausible formula can be invented.
+
+### F1v2.1 findings — 2026-10-02
+
+Official surface re-check completed against the current Panta API documentation surface available to the project and the official `Kaito-HQ/panta-api-playground` repository (main commit `a92b0db`, 2026-09-09).
+
+What Panta officially exposes that is relevant:
+
+- `GET /markets/` and `GET /markets/{id}/` expose current catalog/detail state, including current price fields such as `yesPrice`, `noPrice`, `primaryYesPrice`, `primaryNoPrice`, `secondaryYesPrice`, and `secondaryNoPrice`.
+- `GET /markets/{id}/trades/` and `GET /wallets/{wallet}/trades/` expose historical trade rows with `signature`, `blockTime`, `wallet`, `isPrimary`, `yesAmount`, `noAmount`, `feePaid`, and related attribution fields.
+- `POST /primaryorderquote/` returns a current executable quote with `shares`, `avgPrice`, and `feeUsdc`; this is a pre-trade quote, not a historical trade-tape price record.
+- `POST /primaryorderbuild/` returns concrete Solana instructions with each instruction's `programId`, account metas, and encoded instruction data. This confirms that the public API gives enough identifiers to trace the execution path on-chain.
+- `POST /trades/` plus `GET /trades/{signature}/` provide trade reporting/status by Solana transaction signature.
+
+What is still missing from the official surface:
+
+- no documented historical market-price/probability time-series endpoint,
+- no explicit historical YES/NO spot price or post-trade probability on catalog trade rows,
+- no documented AMM reserve history endpoint,
+- no documented market/program account layout suitable for directly decoding historical state,
+- no published pricing formula that can safely turn `yesAmount` / `noAmount` into spot probability,
+- no transaction decoder or public Panta program ID/account schema in the playground that would make reconstruction immediate.
+
+Research conclusion:
+
+- We still must **not** derive implied historical prices from `yesAmount` / `noAmount` alone.
+- A realistic reconstruction path nevertheless exists through Solana history because every public trade row carries a transaction signature and Panta's own build flow exposes the underlying Solana instruction/program/account structure.
+- F1v2.2 will therefore take several real public trade signatures from the live tape and inspect the corresponding mainnet transactions read-only: outer/inner program IDs, instruction data, logs, writable accounts, token balance changes, and any pre/post market-account state available from RPC. The goal is to identify whether an exact market state or deterministic price-bearing state is recoverable at each trade boundary.
+- No production Signal Feed code changes are justified yet. The current source hierarchy remains durable snapshots for historical probability movement plus Panta trade tape for immediate historical activity.
 
 Implementation proceeds only if the research establishes:
 
