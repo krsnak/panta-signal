@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getMarketSnapshot } from "@/lib/panta";
 import { getTopMovers, recordMarketSnapshots } from "@/lib/history";
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
+import MarketQuote from "@/components/MarketQuote";
 
 type PageProps = {
   searchParams: Promise<{
@@ -64,33 +65,22 @@ export default async function Home({ searchParams }: PageProps) {
     await recordMarketSnapshots(snapshot.markets);
   }
   const topMovers = await getTopMovers(snapshot.markets);
-  const completeMarkets = snapshot.markets.filter(
-    (market) =>
-      !market.title.startsWith("Market ") &&
-      market.yesProbability !== null &&
-      market.noProbability !== null,
+  const titledMarkets = snapshot.markets.filter(
+    (market) => !market.title.startsWith("Market "),
   );
-  const tradingMarkets = completeMarkets
+  const tradingMarkets = titledMarkets
     .filter((market) => market.phase !== "resolved" && market.volumeUsdc > 0)
     .sort((a, b) => b.volumeUsdc - a.volumeUsdc);
-  const initialMarkets = completeMarkets.filter(
+  const initialMarkets = titledMarkets.filter(
     (market) => market.phase !== "resolved" && market.volumeUsdc === 0,
   );
-  const resolvedMarkets = completeMarkets.filter((market) => market.phase === "resolved");
-  const featuredMarket =
-    tradingMarkets.find((market) => market.imageUrl) ??
-    tradingMarkets[0] ??
-    initialMarkets.find((market) => market.imageUrl) ??
-    initialMarkets[0] ??
-    snapshot.markets.find((market) => market.imageUrl) ??
-    snapshot.markets[0];
+  const resolvedMarkets = titledMarkets.filter((market) => market.phase === "resolved");
+  const signalHero = topMovers[0] ?? null;
   const liveMarkets = tradingMarkets
-    .filter((market) => market.id !== featuredMarket?.id)
     .slice(0, 5);
   const moreMarkets = snapshot.markets
     .filter(
       (market) =>
-        market.id !== featuredMarket?.id &&
         !liveMarkets.some((item) => item.id === market.id) &&
         !initialMarkets.some((item) => item.id === market.id) &&
         !resolvedMarkets.some((item) => item.id === market.id),
@@ -181,53 +171,44 @@ export default async function Home({ searchParams }: PageProps) {
           </form>
         </section>
 
-        {featuredMarket && (
-          <section id="featured" className="mt-5 overflow-hidden rounded-[24px] border border-[#20282e] bg-[#0f1418]">
-            <div className="grid lg:grid-cols-[1.05fr_.95fr]">
-              <div className="relative min-h-[280px] overflow-hidden bg-[#0b0f12] lg:min-h-[360px]">
-                {featuredMarket.imageUrl ? (
-                  <Image
-                    src={featuredMarket.imageUrl}
-                    alt=""
-                    fill
-                    priority
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 52vw"
-                  />
-                ) : (
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(52,211,153,.18),transparent_45%)]" />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0f1418] via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-[#0f1418]" />
-                <div className="absolute left-5 top-5 flex gap-2">
-                  <span className="rounded-full bg-black/55 px-3 py-1.5 text-xs font-medium text-white/80 backdrop-blur">{featuredMarket.category}</span>
-                  <span className="rounded-full bg-[#182027] px-3 py-1.5 text-xs font-semibold text-white/70">Featured</span>
+        <section id="featured" className="mt-5 rounded-[24px] border border-[#20282e] bg-[#0f1418] p-6 sm:p-8">
+          <div className="text-xs uppercase tracking-[0.18em] text-white/30">Signal Pulse</div>
+          {signalHero ? (
+            <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_320px]">
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className={signalHero.changePoints >= 0 ? "text-3xl font-semibold text-emerald-300" : "text-3xl font-semibold text-rose-300"}>
+                    {signalHero.changePoints >= 0 ? "+" : ""}{signalHero.changePoints.toFixed(1)} pts
+                  </span>
+                  <span className="text-sm text-white/35">24h observed move</span>
                 </div>
+                <h2 className="mt-4 text-3xl font-semibold leading-tight">{signalHero.market.title}</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">{signalHero.insight}</p>
+                <Link href={marketDetailHref(signalHero.market)} className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10]">Inspect signal →</Link>
               </div>
-              <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-                <div className="text-xs font-medium uppercase tracking-[0.18em] text-white/35">{featuredMarket.phase} market</div>
-                <h2 className="mt-4 text-3xl font-semibold leading-tight tracking-[-0.025em] sm:text-4xl">{featuredMarket.title}</h2>
-                {featuredMarket.description && <p className="mt-4 line-clamp-3 leading-7 text-white/45">{featuredMarket.description}</p>}
-                <div className="mt-7 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.07] p-4">
-                    <div className="text-xs uppercase tracking-[0.15em] text-white/35">YES</div>
-                    <div className="mt-1 text-4xl font-semibold text-emerald-200">{pct(featuredMarket.yesProbability)}</div>
-                  </div>
-                  <div className="rounded-2xl border border-rose-300/20 bg-rose-300/[0.06] p-4">
-                    <div className="text-xs uppercase tracking-[0.15em] text-white/35">NO</div>
-                    <div className="mt-1 text-4xl font-semibold text-rose-200">{pct(featuredMarket.noProbability)}</div>
-                  </div>
-                </div>
-                <div className="mt-5 flex items-center justify-between text-sm text-white/35">
-                  <span>{featuredMarket.status}</span>
-                  <span>{money(featuredMarket.volumeUsdc)} volume</span>
-                </div>
-                <Link href={marketDetailHref(featuredMarket)} className="mt-7 inline-flex w-fit rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">
-                  View market →
-                </Link>
+              <div className="rounded-2xl border border-[#20282e] bg-[#0b0f12] p-4">
+                <div className="text-xs uppercase tracking-[0.14em] text-white/30">Current quote</div>
+                <div className="mt-4"><MarketQuote marketId={signalHero.market.id} /></div>
+                <div className="mt-4 text-xs text-white/30">{money(signalHero.market.volumeUsdc)} volume</div>
               </div>
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_300px]">
+              <div>
+                <h2 className="text-3xl font-semibold">Building the first real signal window</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">
+                  Panta Signal will promote a market here only after durable price history proves a real probability move. No arbitrary featured market is substituted.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#20282e] bg-[#0b0f12] p-4 text-sm text-white/45">
+                <div className="font-medium text-white/70">Signal requirements</div>
+                <div className="mt-3">2+ real observations</div>
+                <div className="mt-1">durable timestamped history</div>
+                <div className="mt-1">measurable probability delta</div>
+              </div>
+            </div>
+          )}
+        </section>
 
         {liveMarkets.length > 0 && (
           <section id="live" className="mt-8">
@@ -237,7 +218,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <h2 className="mt-2 text-2xl font-semibold">Trading now</h2>
                 <p className="mt-1 text-sm text-white/35">Only markets with non-zero Panta volume.</p>
               </div>
-              <span className="text-sm text-white/30">{completeMarkets.length} quoted</span>
+              <span className="text-sm text-white/30">{tradingMarkets.length} active</span>
             </div>
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {liveMarkets.map((market) => (
@@ -254,8 +235,7 @@ export default async function Home({ searchParams }: PageProps) {
                   <div className="p-5">
                     <h3 className="min-h-[3.5rem] text-lg font-medium leading-7">{market.title}</h3>
                     <div className="mt-5 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl bg-emerald-300/[0.08] px-3 py-2.5 text-emerald-200"><span className="text-xs text-white/35">YES</span><span className="float-right font-semibold">{pct(market.yesProbability)}</span></div>
-                      <div className="rounded-xl bg-rose-300/[0.07] px-3 py-2.5 text-rose-200"><span className="text-xs text-white/35">NO</span><span className="float-right font-semibold">{pct(market.noProbability)}</span></div>
+                      <div className="col-span-2"><MarketQuote marketId={market.id} /></div>
                     </div>
                     <div className="mt-4 flex justify-between text-xs text-white/30"><span>{market.phase}</span><span>{money(market.volumeUsdc)} vol.</span></div>
                   </div>
@@ -283,10 +263,7 @@ export default async function Home({ searchParams }: PageProps) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="line-clamp-2 text-sm font-medium leading-5">{market.title}</div>
-                    <div className="mt-2 flex items-center gap-3 text-xs">
-                      <span className="text-emerald-300/70">YES {pct(market.yesProbability)}</span>
-                      <span className="text-rose-300/70">NO {pct(market.noProbability)}</span>
-                    </div>
+                    <div className="mt-2"><MarketQuote marketId={market.id} compact /></div>
                   </div>
                   <span className="shrink-0 text-[11px] text-white/25">$0 vol.</span>
                 </Link>

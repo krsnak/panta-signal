@@ -532,37 +532,11 @@ export async function getMarketSnapshot(options?: {
       })
       .slice(0, limit);
 
-    const byVolume = [...selected].sort(
-      (a, b) => (toNumber(b.volumeUsdc) ?? 0) - (toNumber(a.volumeUsdc) ?? 0),
-    );
-    const enrichmentCandidates = [
-      ...byVolume.filter((market) => market.phase !== "resolved" && (toNumber(market.volumeUsdc) ?? 0) > 0).slice(0, 5),
-      ...selected.filter((market) => market.phase !== "resolved" && (toNumber(market.volumeUsdc) ?? 0) === 0).slice(0, 2),
-      ...byVolume.filter((market) => market.phase === "resolved").slice(0, 3),
-    ];
-    const uniqueCandidates = Array.from(
-      new Map(enrichmentCandidates.map((market) => [market.marketId, market])).values(),
-    );
-    const detailEntries = await Promise.all(
-      uniqueCandidates.map(async (market) => {
-        try {
-          const detail = await pantaFetch<CatalogMarket>(
-            `markets/${encodeURIComponent(market.marketId)}/`,
-            { timeoutMs: 2500, retries: 0, revalidate: 10 },
-          );
-          return [market.marketId, detail] as const;
-        } catch {
-          return [market.marketId, market] as const;
-        }
-      }),
-    );
-    const detailById = new Map(detailEntries);
-
     return {
       source: "panta",
-      markets: selected.map((market) =>
-        normalizeMarket(detailById.get(market.marketId) ?? market, market),
-      ),
+      // Catalog-first by design. Live spot prices are hydrated independently
+      // so an RPC slowdown cannot delay the entire homepage.
+      markets: selected.map((market) => normalizeMarket(market, market)),
       categories,
       error: null,
     };
