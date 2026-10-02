@@ -146,6 +146,7 @@ export default async function Home({ searchParams }: PageProps) {
                 ["1", "Detect change", "Live YES/NO probability and movement"],
                 ["2", "Validate activity", `Public trades + ${signalCoverage.observations} stored observations`],
                 ["3", "Verify on Solana", "Open real transaction evidence"],
+                ["4", "Trade with your wallet", "Buy YES or NO on supported primary markets"],
               ].map(([step, title, description]) => (
                 <div key={step} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 backdrop-blur-sm">
                   <div className="flex items-center gap-3">

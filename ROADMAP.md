@@ -504,6 +504,9 @@ S2 is complete. Next phase: S3 submission packaging and final judge-flow polish.
 - Featured signal is visually smaller and positioned as the first concrete example.
 - Solana proof is now a compact two-action strip instead of a protocol-heavy explanation.
 - Continue UX review from the top down before final screenshot capture.
+- Product story is now: detect → validate → verify → trade.
+- Step 4 is constrained to documented Panta primary-market execution only; secondary-market order-book trading is not implied by the current UI.
+- Execution UX explicitly states USDC on Solana, non-custodial wallet control, wallet approval before broadcast, and trading risk.
 
 ## Sprint S4 — Only after submission blockers are cleared
 **Priority: P2**

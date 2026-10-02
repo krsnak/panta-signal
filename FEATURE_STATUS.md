@@ -349,6 +349,9 @@ Next: S3 submission packaging and judge-flow polish.
   - real Panta transaction
   - executable Panta program
 - Low-value metadata pills were removed from the featured signal card.
+- Hero flow now includes a fourth step: `Trade with your wallet`, explicitly limited to supported primary-market YES/NO purchases.
+- Execution copy follows Panta terminology: primary-market purchase, USDC on Solana, non-custodial wallet approval, no betting language.
+- Primary buy UI now includes a visible trading-risk disclosure and makes clear that the wallet must approve every broadcast.
 
 Production catalog finding — 2026-10-02:
 

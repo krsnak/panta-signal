@@ -246,8 +246,11 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-sm uppercase tracking-[0.18em] text-white/35">Non-custodial buy</div>
-          <h2 className="mt-2 text-2xl font-semibold">Quote YES / NO</h2>
+          <div className="text-sm uppercase tracking-[0.18em] text-white/35">Primary market · non-custodial</div>
+          <h2 className="mt-2 text-2xl font-semibold">Buy YES / NO on Panta</h2>
+          <p className="mt-2 max-w-2xl text-xs leading-5 text-white/40">
+            Primary-market purchases use USDC on Solana. Your wallet remains under your control and must approve every transaction before anything is broadcast.
+          </p>
         </div>
         <button
           type="button"
@@ -288,6 +291,10 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         >
           Get quote
         </button>
+      </div>
+
+      <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.04] px-4 py-3 text-xs leading-5 text-amber-100/65">
+        Trading involves risk and you can lose the USDC used to acquire a position. Prices are market-driven and are not financial advice.
       </div>
 
       {quote && (
