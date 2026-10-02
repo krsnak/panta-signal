@@ -20,4 +20,6 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$CRON_SECRET"
-          curl +            --fail-with-body +            --silent +            --show-error +            --retry 2 +            --retry-all-errors +            --max-time 55 +            -H "Authorization: Bearer $CRON_SECRET" +            "https://panta-signal.vercel.app/api/cron/collect-signals"
+          curl --fail-with-body --silent --show-error --retry 2 --retry-all-errors --max-time 55 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "https://panta-signal.vercel.app/api/cron/collect-signals"
