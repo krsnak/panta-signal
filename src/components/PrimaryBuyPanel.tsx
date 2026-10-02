@@ -8,6 +8,7 @@ import {
   TransactionMessage,
   VersionedTransaction,
 } from "@solana/web3.js";
+import { useSolanaWallet } from "@/components/SolanaWalletProvider";
 
 type Quote = {
   quoteId: string;
@@ -37,25 +38,10 @@ type BuiltOrder = {
   disclaimer?: string;
 };
 
-type SolanaProvider = {
-  isPhantom?: boolean;
-  publicKey?: { toString(): string };
-  connect(): Promise<{ publicKey: { toString(): string } }>;
-  signAndSendTransaction(transaction: VersionedTransaction): Promise<{ signature: string }>;
-};
-
 type ExecutionReceipt = {
   signature: string;
   status: string;
 };
-
-function getProvider() {
-  const browser = window as typeof window & {
-    solana?: SolanaProvider;
-    phantom?: { solana?: SolanaProvider };
-  };
-  return browser.phantom?.solana ?? browser.solana ?? null;
-}
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -81,7 +67,7 @@ function sleep(ms: number) {
 }
 
 export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: string; enabled: boolean }) {
-  const [wallet, setWallet] = useState("");
+  const { wallet, provider, connect, connecting, error: walletError } = useSolanaWallet();
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("5.00");
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -91,15 +77,9 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
   const [busy, setBusy] = useState(false);
 
   async function connectWallet() {
-    const provider = getProvider();
-    if (!provider) {
-      setStatus("No Solana browser wallet detected. Install or open Phantom.");
-      return;
-    }
     try {
       setBusy(true);
-      const result = await provider.connect();
-      setWallet(result.publicKey.toString());
+      await connect();
       setQuote(null);
       setOrder(null);
       setReceipt(null);
@@ -159,7 +139,6 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
 
   async function signAndSubmit() {
     if (!order || !wallet) return;
-    const provider = getProvider();
     if (!provider) return setStatus("Solana wallet is no longer available.");
 
     try {
@@ -227,6 +206,19 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
     }
   }
 
+  const visibleStatus = status || walletError || "";
+  const flowStep = receipt
+    ? receipt.status === "confirmed"
+      ? 5
+      : 4
+    : order
+      ? 3
+      : quote
+        ? 2
+        : wallet
+          ? 1
+          : 0;
+
   if (!enabled) {
     return (
       <div className="rounded-2xl border border-white/10 bg-black/15 p-5 text-sm text-white/45">
@@ -237,6 +229,21 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
 
   return (
     <div className="space-y-4">
+      <div className="grid grid-cols-5 gap-1.5">
+        {["Wallet", "Quote", "Build", "Sign", "Verify"].map((label, index) => {
+          const complete = flowStep > index;
+          const current = flowStep === index;
+          return (
+            <div key={label} className="min-w-0">
+              <div className={`h-1.5 rounded-full ${complete ? "bg-emerald-300" : current ? "bg-white/45" : "bg-white/10"}`} />
+              <div className={`mt-1.5 truncate text-[10px] uppercase tracking-wide ${complete ? "text-emerald-200" : current ? "text-white/60" : "text-white/25"}`}>
+                {label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm uppercase tracking-[0.18em] text-white/35">Non-custodial buy</div>
@@ -244,11 +251,11 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         </div>
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || connecting}
           onClick={connectWallet}
           className="rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-2.5 text-sm font-medium text-emerald-200 disabled:opacity-50"
         >
-          {wallet ? `${wallet.slice(0, 4)}…${wallet.slice(-4)}` : "Connect Solana wallet"}
+          {wallet ? `Phantom ${wallet.slice(0, 4)}…${wallet.slice(-4)}` : connecting ? "Connecting…" : "Connect Phantom"}
         </button>
       </div>
 
@@ -346,7 +353,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         </div>
       )}
 
-      {status && <div className="text-sm leading-6 text-white/45">{status}</div>}
+      {visibleStatus && <div className="text-sm leading-6 text-white/45">{visibleStatus}</div>}
       <p className="text-xs leading-5 text-white/30">Market prices can move and quotes expire. This interface does not provide financial advice.</p>
     </div>
   );

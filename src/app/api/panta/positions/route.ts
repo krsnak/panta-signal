@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWalletPositions } from "@/lib/panta";
+import { getMarketDetail, getWalletPositions } from "@/lib/panta";
 
 export async function GET(request: NextRequest) {
   const wallet = request.nextUrl.searchParams.get("wallet")?.trim();
@@ -9,7 +9,36 @@ export async function GET(request: NextRequest) {
 
   try {
     const positions = await getWalletPositions(wallet);
-    return NextResponse.json({ wallet, positions }, {
+    const marketIds = Array.from(new Set(positions.map((position) => position.marketId))).slice(0, 8);
+    const marketEntries = await Promise.all(
+      marketIds.map(async (marketId) => {
+        try {
+          return [marketId, await getMarketDetail(marketId)] as const;
+        } catch {
+          return [marketId, null] as const;
+        }
+      }),
+    );
+    const markets = new Map(marketEntries);
+    const enriched = positions.map((position) => {
+      const market = markets.get(position.marketId);
+      return {
+        ...position,
+        market: market
+          ? {
+              title: market.title,
+              category: market.category,
+              phase: market.phase,
+              status: market.status,
+              imageUrl: market.imageUrl,
+              yesProbability: market.yesProbability,
+              noProbability: market.noProbability,
+            }
+          : null,
+      };
+    });
+
+    return NextResponse.json({ wallet, positions: enriched }, {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
