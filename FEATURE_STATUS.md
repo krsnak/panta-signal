@@ -194,8 +194,8 @@ Perform the following in short, documented tasks:
 | Task | State | Goal |
 | --- | --- | --- |
 | F1v2.1 Verify all official historical-data surfaces | DONE | Current official playground/API surface exposes current market prices and historical trade activity, but no documented historical spot-price/state series or trade-row price field. |
-| F1v2.2 Inspect real trade transactions on Solana | IN PROGRESS | Public transaction source is being established first; local key is sandbox-only, while the public Panta frontend confirms a live price-history surface that is not documented in the playground. |
-| F1v2.3 Test historical price reconstruction | TODO | Determine whether an exact YES/NO probability can be derived at each trade timestamp. |
+| F1v2.2 Inspect real trade transactions on Solana | DONE | Real mainnet event history inspected. Panta exposes exact price-bearing secondary order events on-chain, but primary trades lack an explicit historical price and the web chart uses a heuristic fallback. |
+| F1v2.3 Test historical price reconstruction | NEXT | Build a read-only experiment only around protocol-derived fields; determine whether exact coverage exists at actual trade timestamps without using chart heuristics. |
 | F1v2.4 Validate against known observations | TODO | Compare reconstructed values with our durable snapshots/current Panta detail; quantify mismatch. |
 | F1v2.5 Decide source hierarchy | TODO | Decide whether reconstruction is exact enough to supplement/replace snapshot-only movement history. |
 | F1v2.6 Implement only if superior | TODO | Backfill history and integrate it into the canonical Signal model only if accuracy/reliability is demonstrated. |
@@ -243,19 +243,30 @@ First read-only transaction-source pass:
 - The history chart does **not** use a hidden historical HTTP endpoint. Its production bundle loads Solana signatures for the market/event PDA via `getSignaturesForAddress`, fetches each transaction with `getParsedTransaction`, parses Panta instructions / `Program data:` logs, and builds the chart client-side.
 - The production bundle ships the current Panta Anchor IDL. The current program address embedded in that IDL is `6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp` (`balr_market`, Anchor).
 - The on-chain parser contains explicit binary discriminators for Panta trade/order events and can recover `side`, acquisition type, wallet, amount, and — for several secondary-market events/instructions — an explicit price encoded as an integer scaled by `1e9`.
-- For secondary fills the parser reads the encoded price, converts it with `price / 1e9`, and deterministically maps it to YES probability (`YES => price`, `NO => 1 - price`). This is a real protocol-derived historical price point, not an inference from `yesAmount` / `noAmount`.
+- For price-bearing secondary events the parser reads the encoded price, converts it with `price / 1e9`, and deterministically maps it to YES probability (`YES => price`, `NO => 1 - price`). This is a real protocol-derived order price point, not an inference from `yesAmount` / `noAmount`. It must not be labelled an executed fill unless the transaction semantics prove execution.
 - For primary orders, the inspected primary event/instruction paths expose side and money spent but do not consistently expose an explicit price. When a parsed trade has no `yesPrice`, the Panta chart's fallback function adjusts the previous price heuristically based on side and trade size. That fallback is visualization logic and **does not satisfy** our F1v2 decision gate.
 - Therefore the likely usable source split is now: **secondary history = potentially exact from on-chain encoded trade price; primary history = still unproven and must not use the chart's heuristic fallback.**
 - Panta's current public How It Works documentation clarifies protocol semantics: primary-market YES and NO prices sum to 1 and move with demand; secondary trading is a CLOB where YES/NO prices are independent. Any reconstruction method must therefore be phase-aware and cannot assume one universal AMM formula.
 
-Next exact F1v2.2 action:
+F1v2.2 real-mainnet verification:
 
-1. take several real mainnet signatures from one primary market and one secondary market,
-2. run the discovered parser logic against those transactions read-only,
-3. confirm the explicit `price / 1e9` secondary decoding across multiple real fills and compare it with current/known Panta observations,
-4. inspect primary transactions/accounts for an exact post-trade state or price field; explicitly reject Panta's chart heuristic as a reconstruction source if no exact primary state is found.
+- Inspected event account `69A5oC4BXuHC1hG6EVpLZbgSH4GQGVBMgQKwHz3YhbZk` through public Solana mainnet RPC.
+- 42 recent event-account transactions were classified. The history contains real `PrimaryOrder`, `SecondaryLimitOrder`, and `CancelSecondaryOrder` instructions.
+- Seven price-bearing secondary events were decoded from real transactions. Examples include raw prices `500000000`, `432556860`, `567443140`, `567400000`, and `700000000`, corresponding to normalized side prices 0.500000000, 0.432556860, 0.567443140, 0.567400000, and 0.700000000.
+- Side normalization is deterministic: a YES order at 0.567443140 maps to YES 56.744314% / NO 43.255686%; a NO order at 0.432556860 maps to the same YES 56.744314% / NO 43.255686%.
+- These verified price-bearing records were `SecondaryLimitOrder` transactions. They prove that exact historical **order prices** are available on-chain, but they do not by themselves prove an executed secondary fill at each point.
+- The same event-account history contains numerous real `PrimaryOrder` transactions. The inspected primary parser path still does not expose an explicit historical post-trade YES probability. Standard transaction RPC provides transaction metadata/balances but not a historical post-transaction snapshot of arbitrary account data that would trivially recover `lastYesPrice`.
+- The current Panta event account schema itself contains `lastYesPrice`, `lastSecondaryYesPrice`, and `lastSecondaryNoPrice`, confirming that canonical current price state exists on-chain. The missing piece is exact historical account state at every primary trade boundary.
+- Panta's own chart fills this primary-history gap with a heuristic price adjustment. That heuristic is explicitly rejected for Panta Signal reconstruction.
 
-F1v2.2 remains **IN PROGRESS** until real mainnet signatures have been inspected. No production code changes have been made.
+F1v2.2 conclusion:
+
+- **Exact secondary order-price history: proven.**
+- **Exact executed-fill price coverage: not yet proven across the sampled market.**
+- **Exact primary historical probability: not proven.**
+- Therefore F1v2.2 does not justify changing the production Signal Feed. F1v2.3 may experiment with the protocol-derived subset only; it must measure coverage and must not silently substitute order prices or heuristic primary prices for actual historical market probability.
+
+No production code changes have been made.
 
 Implementation proceeds only if the research establishes:
 
