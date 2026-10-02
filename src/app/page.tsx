@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getMarketSnapshot } from "@/lib/panta";
-import { getPersistentTopMovers } from "@/lib/history";
+import { getPersistentTopMovers, getSignalCoverage } from "@/lib/history";
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
 
@@ -61,7 +61,10 @@ export default async function Home({ searchParams }: PageProps) {
     status: params.status,
     limit: 20,
   });
-  const topMovers = await getPersistentTopMovers();
+  const [topMovers, signalCoverage] = await Promise.all([
+    getPersistentTopMovers(),
+    getSignalCoverage(),
+  ]);
   const titledMarkets = snapshot.markets.filter(
     (market) => !market.title.startsWith("Market "),
   );
@@ -191,16 +194,22 @@ export default async function Home({ searchParams }: PageProps) {
           ) : (
             <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_300px]">
               <div>
-                <h2 className="text-3xl font-semibold">Building the first real signal window</h2>
+                <h2 className="text-3xl font-semibold">
+                  {signalCoverage.marketsWithHistory > 0
+                    ? "No material probability move detected yet"
+                    : "Building the first real signal window"}
+                </h2>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">
-                  Panta Signal will promote a market here only after durable price history proves a real probability move. No arbitrary featured market is substituted.
+                  {signalCoverage.marketsWithHistory > 0
+                    ? "Real durable observations exist, but none has moved enough to qualify as a signal. Panta Signal will not promote a flat market just to fill the hero."
+                    : "Panta Signal will promote a market here only after durable price history proves a real probability move. No arbitrary featured market is substituted."}
                 </p>
               </div>
               <div className="rounded-2xl border border-[#20282e] bg-[#0b0f12] p-4 text-sm text-white/45">
-                <div className="font-medium text-white/70">Signal requirements</div>
-                <div className="mt-3">2+ real observations</div>
-                <div className="mt-1">durable timestamped history</div>
-                <div className="mt-1">measurable probability delta</div>
+                <div className="font-medium text-white/70">Signal coverage</div>
+                <div className="mt-3">{signalCoverage.observations} observations</div>
+                <div className="mt-1">{signalCoverage.marketsObserved} markets observed</div>
+                <div className="mt-1">{signalCoverage.marketsWithHistory} with 2+ snapshots</div>
               </div>
             </div>
           )}
@@ -219,7 +228,9 @@ export default async function Home({ searchParams }: PageProps) {
 
             {topMovers.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/15 p-5 text-sm leading-6 text-white/45">
-                Durable collection is active. The first mover appears after two real observations of the same market.
+                {signalCoverage.marketsWithHistory > 0
+                  ? "History is live, but no observed move currently clears the material-movement threshold."
+                  : "Durable collection is active. The first mover appears after two real observations of the same market."}
               </div>
             ) : (
               <div className="mt-5 divide-y divide-[#20282e]">

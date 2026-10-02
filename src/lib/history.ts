@@ -35,6 +35,13 @@ export type HistoryBackendStatus = {
   latestSnapshotAgeSeconds: number | null;
 };
 
+export type SignalCoverage = {
+  observations: number;
+  marketsObserved: number;
+  marketsWithHistory: number;
+  latestSnapshotAt: number | null;
+};
+
 type HistoryFile = {
   version: 1;
   points: MarketHistoryPoint[];
@@ -383,8 +390,35 @@ export async function getPersistentTopMovers(hours = 24): Promise<MarketMover[]>
   }
 
   return movers
+    .filter((mover) => Math.abs(mover.changePoints) >= 0.05)
     .sort((a, b) => Math.abs(b.changePoints) - Math.abs(a.changePoints))
     .slice(0, 5);
+}
+
+export async function getSignalCoverage(hours = 24): Promise<SignalCoverage> {
+  const cutoff = Date.now() - Math.max(hours, 1) * 60 * 60 * 1000;
+  const historyPoints = hasDatabase()
+    ? await readDatabaseHistory(cutoff)
+    : await (async () => {
+        await writeQueue;
+        const history = await readHistory();
+        return history.points.filter((point) => point.capturedAt >= cutoff);
+      })();
+
+  const counts = new Map<string, number>();
+  let latestSnapshotAt: number | null = null;
+  for (const point of historyPoints) {
+    counts.set(point.marketId, (counts.get(point.marketId) ?? 0) + 1);
+    latestSnapshotAt =
+      latestSnapshotAt === null ? point.capturedAt : Math.max(latestSnapshotAt, point.capturedAt);
+  }
+
+  return {
+    observations: historyPoints.length,
+    marketsObserved: counts.size,
+    marketsWithHistory: [...counts.values()].filter((count) => count >= 2).length,
+    latestSnapshotAt,
+  };
 }
 
 export async function getMarketInsight(market: PantaMarket, hours = 24) {
