@@ -79,6 +79,54 @@ The global submission must emphasize:
 
 ## Product pillars
 
+## Product hierarchy — signal first, market catalog second
+
+Panta Signal must **not** present itself as a clone of the Panta market catalog.
+Panta provides the market infrastructure, pricing, positions, and order flow.
+Panta Signal must make its own intelligence features obvious within the first screen.
+
+Homepage priority:
+
+1. **Top Mover / Signal Pulse hero**
+   - strongest observed 1h / 24h probability movement
+   - current YES / NO
+   - probability-point change
+   - volume context
+   - observation count / data freshness
+   - mini price-history chart
+   - Inspect signal action
+2. **Signal Feed**
+   - top movers
+   - newly active markets
+   - volume acceleration where supported by real observations
+   - live / cached / unavailable data state
+3. **Wallet Intelligence**
+   - connected wallet
+   - positions and exposure
+   - claimable / outcome state
+   - mark-to-market where a usable price exists
+4. **Solana Execution**
+   - visible path from signal to Panta quote/build and Phantom signature
+   - transaction / Explorer / Panta verify status
+5. **Market Explorer**
+   - supporting discovery tool, not the core product
+6. **Resolved markets**
+   - archive/filter only
+   - never consume prime homepage real estate
+
+The first screen should answer:
+
+> What moved, by how much, how reliable/fresh is the observation, what am I exposed to, and can I act on it?
+
+It should not primarily answer:
+
+> What markets exist?
+
+### Truthfulness rule
+
+Top Movers and Signal Pulse must only appear when durable real history supports them.
+Until enough observations exist, the product must show an explicit data-collection state rather than fabricate movement or promote an arbitrary market as a signal.
+
 ### 1. Market Discovery
 - Panta-native market catalog.
 - Category / phase / search filters.
