@@ -306,6 +306,14 @@ S1 is complete.
 - No speculative historical reconstruction was added.
 - No wallet signing or financial action was required.
 
+### Submission Sprint S2 — SolanaCZE proof
+
+| Task | State | Goal |
+| --- | --- | --- |
+| S2.1 Production judge-flow verification | DONE | Production homepage and live market detail verified after S1; real Solana trade signatures and Explorer paths are present. |
+| S2.2 Panta program relationship | NEXT | Make the Panta/Solana program relationship explicit to the judge without requiring repository knowledge. |
+| S2.3 Execution-path integrity check | TODO | Confirm existing quote/build/sign/submit path remains intact; no real spend required. |
+
 Audit conclusion:
 
 - No global redesign is required.

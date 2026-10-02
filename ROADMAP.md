@@ -368,11 +368,37 @@ The judge-first product pass is complete. The next active sprint is **S2 — Sol
 
 Goal: make meaningful Solana usage visible and auditable without turning the project into a wallet-engineering project.
 
+- [x] Production judge-flow smoke after S1.
 - [ ] Show the Panta/Solana program relationship clearly in the product or demo.
-- [ ] Surface a real public Solana transaction/signature and Explorer path where available.
-- [ ] Demonstrate that Panta market activity is verifiably on-chain.
+- [x] Surface a real public Solana transaction/signature and Explorer path where available.
+- [x] Demonstrate that Panta market activity is verifiably on-chain.
 - [ ] Keep the existing non-custodial quote/build/sign/submit path intact.
 - [ ] A real wallet transaction is optional until it is explicitly approved; do not block the submission on spending funds if the read-only on-chain proof tells the product story sufficiently.
+
+### S2 production verification — 2026-10-02
+
+**DONE**
+
+- Production deployment contains the full S1 judge flow:
+  - Solana-first positioning,
+  - Signal hero,
+  - Verified on Solana proof,
+  - Optional tools,
+  - curated live market explorer.
+- Live market API returned 7 markets.
+- Production market checked:
+  - Manchester United vs Spurs market
+  - phase: secondary
+  - YES 51.8% / NO 48.2%
+  - volume: $11
+- Market detail showed:
+  - 26 durable observations,
+  - 2 public trades in the last 24h,
+  - explicit Panta API / Panta Signal / Solana provenance.
+- Both displayed recent trades exposed valid Solana signatures with Explorer links.
+- No new feature or wallet transaction was required for this verification.
+
+Next S2 task: make the public Panta program relationship explicit enough that a SolanaCZE judge can see which on-chain program/activity the product is observing without reading repository documentation.
 
 ## Sprint S3 — Submission packaging
 **Priority: P0**
