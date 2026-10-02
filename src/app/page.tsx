@@ -9,6 +9,7 @@ import {
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
 import PrimarySignalCard from "@/components/PrimarySignalCard";
+import SignalList from "@/components/SignalList";
 
 type PageProps = {
   searchParams: Promise<{
@@ -155,34 +156,15 @@ export default async function Home({ searchParams }: PageProps) {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-white/30">More signals</div>
-                <h2 className="mt-2 text-2xl font-semibold">Observed price movers</h2>
-                <p className="mt-2 text-sm text-white/40">Additional markets ranked only from durable Panta price observations.</p>
+                <h2 className="mt-2 text-2xl font-semibold">Observed signal queue</h2>
+                <p className="mt-2 text-sm text-white/40">Movement first, then real trading activity, then flat/collecting markets. Resolved markets are excluded.</p>
               </div>
               <span className="text-xs text-white/30">24h</span>
             </div>
 
-            {topMovers.length === 0 ? (
-              <div className="mt-5 rounded-2xl border border-white/10 bg-black/15 p-5 text-sm leading-6 text-white/45">
-                {signalCoverage.marketsWithHistory > 0
-                  ? "No additional price mover currently clears the material-movement threshold. The primary Signal Feed card above remains useful because it also surfaces real trading activity."
-                  : "Durable collection is active. The first mover appears after two real observations of the same market."}
-              </div>
-            ) : (
-              <div className="mt-5 divide-y divide-[#20282e]">
-                {topMovers.map((mover, index) => (
-                  <Link key={mover.market.id} href={marketDetailHref(mover.market)} className="flex items-start gap-4 py-4 first:pt-0 last:pb-0">
-                    <span className="mt-0.5 w-5 text-xs font-semibold text-white/20">{index + 1}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="line-clamp-1 text-sm font-medium text-white/80">{mover.market.title}</div>
-                      <div className="mt-1 line-clamp-2 text-xs leading-5 text-white/35">{mover.insight}</div>
-                    </div>
-                    <span className={mover.changePoints >= 0 ? "shrink-0 text-sm font-semibold text-emerald-300" : "shrink-0 text-sm font-semibold text-rose-300"}>
-                      {mover.changePoints >= 0 ? "+" : ""}{mover.changePoints.toFixed(1)} pts
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div className="mt-5">
+              <SignalList excludeMarketId={primarySignalMarket?.id} />
+            </div>
 
           </div>
 
