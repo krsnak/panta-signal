@@ -76,7 +76,8 @@ export default async function Home({ searchParams }: PageProps) {
   );
   const resolvedMarkets = titledMarkets.filter((market) => market.phase === "resolved");
   const signalHero = topMovers[0] ?? null;
-  const actionableMarket = signalHero?.market ?? tradingMarkets[0] ?? initialMarkets[0] ?? null;
+  const actionableMarket =
+    titledMarkets.find((market) => market.phase === "primary") ?? null;
   const liveMarkets = tradingMarkets
     .slice(0, 5);
   const moreMarkets = snapshot.markets
@@ -271,7 +272,9 @@ export default async function Home({ searchParams }: PageProps) {
                   Open execution workspace →
                 </Link>
               ) : (
-                <div className="mt-5 text-sm text-white/35">Waiting for an actionable Panta market.</div>
+                <div className="mt-5 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] p-4 text-sm leading-6 text-amber-100/60">
+                  Panta currently exposes no primary market in the live catalog, so a real buy transaction cannot be built right now. Phantom connection and wallet positions remain fully functional; execution activates automatically when a primary market opens.
+                </div>
               )}
             </div>
           </div>

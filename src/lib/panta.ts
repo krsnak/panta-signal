@@ -285,6 +285,35 @@ export type PrimaryOrderStatus = {
   amountUsdc?: number | string;
 };
 
+export type MarketCreateQuote = {
+  createId: string;
+  expectedEventPda: string;
+  paymentUsdc: string;
+  liquidityInjectionUsdc: string;
+  platformRevenueUsdc: string;
+  marketType: string;
+  expiresAt: string;
+  blockhashExpiryHintSec?: number;
+};
+
+export type MarketCreateBuild = MarketCreateQuote & {
+  transaction: string;
+  recentBlockhash: string;
+  lastValidBlockHeight: number;
+  buildFingerprint: string;
+  derived?: Record<string, string>;
+};
+
+export type MarketCreateRegistration = {
+  createId: string;
+  marketId: string;
+  status: string;
+  signature: string;
+  category?: string;
+  title?: string;
+  images?: string[];
+};
+
 export async function quotePrimaryBuy(input: {
   wallet: string;
   marketId: string;
@@ -319,6 +348,34 @@ export async function verifyPrimaryBuy(input: {
   wallet?: string;
 }) {
   return pantaPost<PrimaryOrderStatus>("primaryorderverify/", input);
+}
+
+export async function quoteMarketCreate(input: {
+  wallet: string;
+  question: string;
+  resolutionRule: string;
+  sourcesOfTruth: string[];
+  category: string;
+  startTime: number;
+  endTime: number;
+  resolutionTime: number;
+  imageUrl: string;
+  marketType?: "standard" | "breaking";
+  eventInProgress?: boolean;
+  title?: string;
+  description?: string;
+  region?: string;
+  oracle?: string;
+}) {
+  return pantaPost<MarketCreateQuote>("markets/create/quote/", input);
+}
+
+export async function buildMarketCreate(input: { createId: string; wallet?: string }) {
+  return pantaPost<MarketCreateBuild>("markets/create/build/", input);
+}
+
+export async function registerMarketCreate(input: { createId: string; signature: string }) {
+  return pantaPost<MarketCreateRegistration>("markets/register/", input);
 }
 
 async function getCategories() {

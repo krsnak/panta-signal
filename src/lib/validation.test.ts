@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   isMarketSide,
   isOpaqueSessionId,
+  isPantaCategory,
+  isPublicHttpUrl,
   isPositiveUsdcAmount,
   isSlippageBps,
   isSolanaPublicKey,
   isSolanaSignature,
+  isUnixSecond,
 } from "./validation";
 
 describe("Solana/Panta input validation", () => {
@@ -45,5 +48,23 @@ describe("Solana/Panta input validation", () => {
     expect(isSolanaSignature("1".repeat(88))).toBe(true);
     expect(isSolanaSignature("0".repeat(88))).toBe(false);
     expect(isSolanaSignature("short")).toBe(false);
+  });
+
+  it("accepts only documented Panta categories", () => {
+    expect(isPantaCategory("crypto")).toBe(true);
+    expect(isPantaCategory("finance")).toBe(true);
+    expect(isPantaCategory("memes")).toBe(false);
+  });
+
+  it("accepts public http(s) image URLs and rejects local hosts", () => {
+    expect(isPublicHttpUrl("https://panta-signal.vercel.app/panta-signal-market.svg")).toBe(true);
+    expect(isPublicHttpUrl("http://localhost:3000/image.png")).toBe(false);
+    expect(isPublicHttpUrl("file:///tmp/image.png")).toBe(false);
+  });
+
+  it("validates unix-second timestamps", () => {
+    expect(isUnixSecond(1_800_000_000)).toBe(true);
+    expect(isUnixSecond(1.5)).toBe(false);
+    expect(isUnixSecond(-1)).toBe(false);
   });
 });
