@@ -212,9 +212,9 @@ The production truthfulness rule remains unchanged: trade-tape YES/NO amounts ar
 
 Goal: a judge understands the product within the first 30 seconds.
 
-- [ ] Homepage states the problem and value proposition in one screen.
+- [x] Homepage states the problem and value proposition in one screen.
 - [ ] Signal Feed remains the hero capability; no research/debug concepts on the first screen.
-- [ ] One clearly active live market demonstrates current probability + activity + freshness.
+- [x] One clearly active live market demonstrates current probability + activity + freshness.
 - [ ] Market detail explains where the data comes from and distinguishes Panta API, durable history and Solana evidence.
 - [ ] Remove or demote UI that looks unfinished, empty, duplicated or non-essential.
 
@@ -255,6 +255,17 @@ Current judge-facing weaknesses:
 - Keep Signal Feed as the only dominant hero CTA.
 
 Acceptance gate: within one screen, a new viewer can answer **what the product does, what makes it different, and which data is real**.
+
+**DONE 2026-10-02**
+
+- Header badge now says `Solana market intelligence`.
+- Added a concise `Panta intelligence layer on Solana` positioning label.
+- Hero headline now explains signal interpretation + real trading support + Solana verification in one sentence.
+- Replaced internal coverage KPI cards with an evidence strip:
+  - Live Panta market data
+  - Durable observations
+  - Solana-verifiable activity
+- Local rendered homepage verified after the change.
 
 #### S1.2 — Simplify the Signal hero
 

@@ -75,7 +75,7 @@ export default async function Home({ searchParams }: PageProps) {
         <div className="mx-auto flex max-w-[1480px] items-center gap-5 px-5 py-4 lg:px-8">
           <Link href="/" className="text-2xl font-semibold tracking-tight">Panta Signal</Link>
           <span className="hidden rounded-md bg-[#151b20] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:inline-flex">
-            API Sidetrack
+            Solana market intelligence
           </span>
           <div className="ml-auto flex items-center gap-2 text-xs text-white/45">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -102,24 +102,31 @@ export default async function Home({ searchParams }: PageProps) {
       </header>
 
       <div className="mx-auto max-w-[1480px] px-5 py-6 lg:px-8">
-        <section className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
+        <section className="mb-5 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Know what changed on Panta — and why it matters</h1>
+            <div className="mb-3 inline-flex rounded-full border border-emerald-300/15 bg-emerald-300/[0.05] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-200/80">
+              Panta intelligence layer on Solana
+            </div>
+            <h1 className="max-w-4xl text-3xl font-semibold tracking-tight sm:text-4xl">
+              See what changed on Panta, whether real trading supports it, and verify the activity on Solana.
+            </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">
-              Signal Feed combines live YES/NO pricing, durable probability history and public trades so you can see whether a market moved, trading activity picked up, or nothing meaningful changed.
+              Panta Signal combines live market probabilities, durable observations and public trade activity into one evidence-backed signal — without inventing movement when the data is not there.
             </p>
           </div>
-          <div className="flex gap-2">
-            {[
-              ["Observations", signalCoverage.observations],
-              ["Markets tracked", signalCoverage.marketsObserved],
-              ["Price movers", topMovers.length],
-            ].map(([label, value]) => (
-              <div key={label} className="min-w-[92px] rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
-                <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">{label}</div>
-                <div className="mt-1 text-lg font-semibold">{value}</div>
-              </div>
-            ))}
+          <div className="grid min-w-[280px] gap-2 text-xs sm:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
+              <div className="font-medium text-white/75">Live Panta market data</div>
+              <div className="mt-1 text-white/30">Current YES/NO + market state</div>
+            </div>
+            <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
+              <div className="font-medium text-white/75">Durable observations</div>
+              <div className="mt-1 text-white/30">{signalCoverage.observations} snapshots across {signalCoverage.marketsObserved} market{signalCoverage.marketsObserved === 1 ? "" : "s"}</div>
+            </div>
+            <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
+              <div className="font-medium text-white/75">Solana-verifiable activity</div>
+              <div className="mt-1 text-white/30">Public Panta trades and signatures</div>
+            </div>
           </div>
         </section>
 
