@@ -56,6 +56,18 @@ function signalLabel(signal: MarketSignal) {
   return "Building history";
 }
 
+function plainSignalTakeaway(signal: MarketSignal) {
+  const change = signal.movement.changePoints;
+  const trades = signal.activity24h?.tradeCount24h ?? 0;
+  if (change !== null && Math.abs(change) >= 0.5) {
+    return `Probability moved ${change > 0 ? "up" : "down"} ${Math.abs(change).toFixed(1)} points, with ${trades} public trade${trades === 1 ? "" : "s"} in the last 24h.`;
+  }
+  if (trades > 0) {
+    return `Probability is broadly stable, but the market recorded ${trades} public trade${trades === 1 ? "" : "s"} in the last 24h.`;
+  }
+  return "No meaningful probability move or recent trading activity is currently confirmed.";
+}
+
 export default function PrimarySignalCard({
   fallback,
   href,
@@ -123,8 +135,13 @@ export default function PrimarySignalCard({
           <p className="mt-4 max-w-3xl text-sm leading-6 text-white/50">
             {signal ? describeMarketSignal(signal) : "Combining Panta market detail, durable price history and the public trade tape into one signal."}
           </p>
+          {signal && (
+            <div className="mt-4 rounded-2xl border border-emerald-300/10 bg-emerald-300/[0.04] px-4 py-3 text-sm leading-6 text-white/70">
+              {plainSignalTakeaway(signal)}
+            </div>
+          )}
 
-          <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-7 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Price movement</div>
               <div className={`mt-2 text-2xl font-semibold ${change === null ? "text-white/65" : change > 0 ? "text-emerald-200" : change < 0 ? "text-rose-200" : "text-white/80"}`}>
@@ -142,15 +159,22 @@ export default function PrimarySignalCard({
               </div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">24h shares</div>
-              <div className="mt-2 text-lg font-semibold text-emerald-200">YES {activity ? compact(activity.yesShares24h) : "—"}</div>
-              <div className="mt-1 text-sm font-medium text-rose-200">NO {activity ? compact(activity.noShares24h) : "—"}</div>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Market volume</div>
               <div className="mt-2 text-2xl font-semibold">{money(signal?.current.volumeUsdc ?? fallback.volumeUsdc)}</div>
               <div className="mt-1 text-xs text-white/30">Panta market detail</div>
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-white/35">
+            <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+              {signal ? `${signal.movement.observationCount} durable observations` : "Durable history"}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+              {activity ? `YES ${compact(activity.yesShares24h)} · NO ${compact(activity.noShares24h)} shares` : "Trade shares loading"}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5">
+              {signal ? `Quote ${signal.quoteState}` : "Quote loading"}
+            </span>
           </div>
 
           {error && (
@@ -183,9 +207,9 @@ export default function PrimarySignalCard({
             <div className="h-2 bg-emerald-300/70 transition-all" style={{ width: `${Math.max(0, Math.min(100, (yes ?? 0) * 100))}%` }} />
           </div>
           <div className="mt-6 space-y-3 border-t border-white/10 pt-5 text-xs">
-            <div className="flex justify-between gap-4"><span className="text-white/30">Signal type</span><span className="text-white/70">{signal ? signalLabel(signal) : "Loading"}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-white/30">Observations</span><span className="text-white/70">{signal?.movement.observationCount ?? "…"}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-white/30">Activity data</span><span className="text-white/70">{signal?.activityState ?? "loading"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/30">Signal</span><span className="text-white/70">{signal ? signalLabel(signal) : "Loading"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/30">Freshness</span><span className="text-white/70">{signal ? freshness(signal.current.ageSeconds) : "…"}</span></div>
+            <div className="flex justify-between gap-4"><span className="text-white/30">Evidence</span><span className="text-white/70">{activity ? `${activity.tradeCount24h} trades / 24h` : "loading"}</span></div>
           </div>
         </div>
       </div>

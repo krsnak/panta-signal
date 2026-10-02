@@ -287,8 +287,8 @@ The next active work is not Function 2 and not F1v2.3. It is a short **submissio
 | --- | --- | --- |
 | S1 audit | DONE | Production homepage + market detail reviewed from a first-time judge perspective. |
 | S1.1 First-screen story | DONE | First screen now states the product purpose, Solana positioning and trusted data sources before the Signal hero. Local render, tests, lint and production build verified. |
-| S1.2 Simplify Signal hero | NEXT | Preserve signal value while reducing internal implementation language. |
-| S1.3 On-chain evidence | TODO | Add one-click proof from Panta Signal to a real public Panta/Solana transaction. |
+| S1.2 Simplify Signal hero | DONE | Hero now prioritizes probability movement, trading activity and market volume, adds a plain-language takeaway, and demotes observations/share/quote state into trust labels. Tests, lint, build and local render verified. |
+| S1.3 On-chain evidence | NEXT | Add one-click proof from Panta Signal to a real public Panta/Solana transaction. |
 | S1.4 Demote Wallet + Execution | TODO | Keep capability without letting unavailable execution look like a broken core feature. |
 | S1.5 Reduce Market Explorer noise | TODO | Prioritize credible live markets and demote catalog browsing. |
 | S1.6 Market detail provenance | TODO | Explicitly label Panta API, durable Signal and Solana evidence sources. |

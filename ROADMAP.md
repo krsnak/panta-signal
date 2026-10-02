@@ -277,6 +277,14 @@ Acceptance gate: within one screen, a new viewer can answer **what the product d
 
 Acceptance gate: the hero can be understood without knowing Panta Signal's internal data architecture.
 
+**DONE 2026-10-02**
+
+- Added one plain-language signal takeaway directly below the grounded signal explanation.
+- Reduced the main KPI row to three judge-relevant facts: probability movement, 24h trades and market volume.
+- Moved durable observation count, YES/NO traded shares and quote state into compact trust labels.
+- Replaced internal right-column labels with simpler `Signal`, `Freshness` and `Evidence`.
+- Preserved all canonical Signal data and fallback behavior; no model or API semantics changed.
+
 #### S1.3 — Add explicit on-chain evidence
 
 - Add a compact `Verified on Solana` evidence element tied to a real public Panta transaction/signature.
