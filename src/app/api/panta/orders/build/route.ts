@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildPrimaryBuy } from "@/lib/panta";
+import {
+  isOpaqueSessionId,
+  isSlippageBps,
+  isSolanaPublicKey,
+} from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,8 +13,14 @@ export async function POST(request: NextRequest) {
       wallet?: string;
       maxSlippageBps?: number;
     };
-    if (!body.quoteId || !body.wallet) {
-      return NextResponse.json({ error: "quoteId and wallet are required" }, { status: 400 });
+    if (!isOpaqueSessionId(body.quoteId)) {
+      return NextResponse.json({ error: "Invalid quoteId" }, { status: 400 });
+    }
+    if (!isSolanaPublicKey(body.wallet)) {
+      return NextResponse.json({ error: "Invalid Solana wallet address" }, { status: 400 });
+    }
+    if (body.maxSlippageBps !== undefined && !isSlippageBps(body.maxSlippageBps)) {
+      return NextResponse.json({ error: "maxSlippageBps must be an integer between 0 and 5000" }, { status: 400 });
     }
     const order = await buildPrimaryBuy({
       quoteId: body.quoteId,

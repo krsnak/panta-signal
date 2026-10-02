@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { submitPrimaryBuy } from "@/lib/panta";
+import {
+  isOpaqueSessionId,
+  isSolanaPublicKey,
+  isSolanaSignature,
+} from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,8 +13,14 @@ export async function POST(request: NextRequest) {
       signature?: string;
       wallet?: string;
     };
-    if (!body.orderId || !body.signature) {
-      return NextResponse.json({ error: "orderId and signature are required" }, { status: 400 });
+    if (!isOpaqueSessionId(body.orderId)) {
+      return NextResponse.json({ error: "Invalid orderId" }, { status: 400 });
+    }
+    if (!isSolanaSignature(body.signature)) {
+      return NextResponse.json({ error: "Invalid Solana transaction signature" }, { status: 400 });
+    }
+    if (body.wallet !== undefined && !isSolanaPublicKey(body.wallet)) {
+      return NextResponse.json({ error: "Invalid Solana wallet address" }, { status: 400 });
     }
     const result = await submitPrimaryBuy({
       orderId: body.orderId,
