@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  describeMarketSignal,
   formatSignalWindow,
   type MarketSignal,
 } from "@/lib/signal-model";
@@ -126,41 +125,38 @@ export default function PrimarySignalCard({
         </div>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-[1.35fr_.65fr]">
-        <div className="p-5 sm:p-6 lg:p-7">
+      <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
+        <div className="p-5 sm:p-6">
           <div className="text-xs uppercase tracking-[0.16em] text-white/30">{fallback.category}</div>
-          <h2 className="mt-2 max-w-4xl text-2xl font-semibold leading-tight tracking-[-0.025em] sm:text-3xl">
+          <h2 className="mt-2 max-w-4xl text-xl font-semibold leading-tight tracking-[-0.02em] sm:text-2xl">
             {signal?.market.title ?? fallback.title}
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-5 text-white/50">
-            {signal ? describeMarketSignal(signal) : "Combining Panta market detail, durable price history and the public trade tape into one signal."}
-          </p>
           {signal && (
-            <div className="mt-3 rounded-xl border border-emerald-300/10 bg-emerald-300/[0.04] px-4 py-2.5 text-sm leading-5 text-white/70">
+            <div className="mt-3 text-sm leading-5 text-white/60">
               {plainSignalTakeaway(signal)}
             </div>
           )}
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3.5">
+          <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
+            <div className="rounded-lg border border-white/10 bg-black/15 px-3.5 py-3">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Price movement</div>
-              <div className={`mt-2 text-2xl font-semibold ${change === null ? "text-white/65" : change > 0 ? "text-emerald-200" : change < 0 ? "text-rose-200" : "text-white/80"}`}>
+              <div className={`mt-1 text-lg font-semibold ${change === null ? "text-white/65" : change > 0 ? "text-emerald-200" : change < 0 ? "text-rose-200" : "text-white/80"}`}>
                 {change === null ? "Collecting" : `${change >= 0 ? "+" : ""}${change.toFixed(1)} pts`}
               </div>
               <div className="mt-1 text-xs text-white/30">{signal ? `${signal.movement.observationCount} obs · ${formatSignalWindow(signal.movement.windowSeconds)}` : "durable history"}</div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3.5">
+            <div className="rounded-lg border border-white/10 bg-black/15 px-3.5 py-3">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">24h trades</div>
-              <div className="mt-2 text-2xl font-semibold">{activity ? activity.tradeCount24h : signal?.activityState === "unavailable" ? "—" : "…"}</div>
+              <div className="mt-1 text-lg font-semibold">{activity ? activity.tradeCount24h : signal?.activityState === "unavailable" ? "—" : "…"}</div>
               <div className="mt-1 text-xs text-white/30">
                 {activity
                   ? `${compact(activity.primaryCount24h)} primary · last trade ${freshness(activity.latestTradeAgeSeconds)}`
                   : "public trade tape"}
               </div>
             </div>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3.5">
+            <div className="rounded-lg border border-white/10 bg-black/15 px-3.5 py-3">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Market volume</div>
-              <div className="mt-2 text-2xl font-semibold">{money(signal?.current.volumeUsdc ?? fallback.volumeUsdc)}</div>
+              <div className="mt-1 text-lg font-semibold">{money(signal?.current.volumeUsdc ?? fallback.volumeUsdc)}</div>
               <div className="mt-1 text-xs text-white/30">Panta market detail</div>
             </div>
           </div>
@@ -171,32 +167,34 @@ export default function PrimarySignalCard({
             </div>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Link href={href} className="inline-flex rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Link href={href} className="inline-flex rounded-lg bg-white px-3.5 py-2 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">
               Inspect signal →
             </Link>
             <span className="text-xs text-white/30">Real Panta data · no synthetic movement</span>
           </div>
         </div>
 
-        <div className="border-t border-[#20282e] bg-[#0b0f12] p-5 sm:p-6 lg:border-l lg:border-t-0 lg:p-7">
-          <div className="text-xs uppercase tracking-[0.16em] text-white/30">Current probability</div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-emerald-300/15 bg-emerald-300/[0.06] p-4">
+        <div className="border-t border-[#20282e] bg-[#0b0f12] p-5 lg:border-l lg:border-t-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs uppercase tracking-[0.16em] text-white/30">Current probability</div>
+            <div className="text-xs text-white/30">{signal ? freshness(signal.current.ageSeconds) : "…"}</div>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2.5">
+            <div className="rounded-lg border border-emerald-300/15 bg-emerald-300/[0.06] px-3.5 py-3">
               <div className="text-xs font-medium text-white/35">YES</div>
-              <div className="mt-2 text-4xl font-semibold text-emerald-200">{pct(yes)}</div>
+              <div className="mt-1 text-2xl font-semibold text-emerald-200">{pct(yes)}</div>
             </div>
-            <div className="rounded-xl border border-rose-300/15 bg-rose-300/[0.05] p-4">
+            <div className="rounded-lg border border-rose-300/15 bg-rose-300/[0.05] px-3.5 py-3">
               <div className="text-xs font-medium text-white/35">NO</div>
-              <div className="mt-2 text-4xl font-semibold text-rose-200">{pct(no)}</div>
+              <div className="mt-1 text-2xl font-semibold text-rose-200">{pct(no)}</div>
             </div>
           </div>
-          <div className="mt-4 overflow-hidden rounded-full bg-white/[0.06]">
-            <div className="h-2 bg-emerald-300/70 transition-all" style={{ width: `${Math.max(0, Math.min(100, (yes ?? 0) * 100))}%` }} />
+          <div className="mt-3 overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="h-1.5 bg-emerald-300/70 transition-all" style={{ width: `${Math.max(0, Math.min(100, (yes ?? 0) * 100))}%` }} />
           </div>
-          <div className="mt-5 space-y-2.5 border-t border-white/10 pt-4 text-xs">
+          <div className="mt-4 space-y-2 border-t border-white/10 pt-3 text-xs">
             <div className="flex justify-between gap-4"><span className="text-white/30">Signal</span><span className="text-white/70">{signal ? signalLabel(signal) : "Loading"}</span></div>
-            <div className="flex justify-between gap-4"><span className="text-white/30">Freshness</span><span className="text-white/70">{signal ? freshness(signal.current.ageSeconds) : "…"}</span></div>
             <div className="flex justify-between gap-4"><span className="text-white/30">Evidence</span><span className="text-white/70">{activity ? `${activity.tradeCount24h} trades / 24h` : "loading"}</span></div>
           </div>
         </div>
