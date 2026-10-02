@@ -23,6 +23,14 @@ export type MarketMover = {
   insight: string;
 };
 
+export type HistoryBackendStatus = {
+  backend: "postgres" | "file";
+  configured: boolean;
+  reachable: boolean;
+  latestSnapshotAt: number | null;
+  latestSnapshotAgeSeconds: number | null;
+};
+
 type HistoryFile = {
   version: 1;
   points: MarketHistoryPoint[];
@@ -312,4 +320,61 @@ export async function getMarketInsight(market: PantaMarket, hours = 24) {
     text: buildInsight(points[0], points[points.length - 1]),
     points,
   };
+}
+
+export async function getHistoryBackendStatus(): Promise<HistoryBackendStatus> {
+  const now = Date.now();
+
+  if (hasDatabase()) {
+    try {
+      await ensureSchema();
+      const sql = db();
+      const rows = await sql`
+        select max(captured_at) as latest_snapshot_at
+        from market_snapshots
+      `;
+      const raw = rows[0]?.latest_snapshot_at as Date | string | null | undefined;
+      const latestSnapshotAt = raw ? new Date(raw).getTime() : null;
+      return {
+        backend: "postgres",
+        configured: true,
+        reachable: true,
+        latestSnapshotAt,
+        latestSnapshotAgeSeconds:
+          latestSnapshotAt === null ? null : Math.max(0, Math.round((now - latestSnapshotAt) / 1000)),
+      };
+    } catch {
+      return {
+        backend: "postgres",
+        configured: true,
+        reachable: false,
+        latestSnapshotAt: null,
+        latestSnapshotAgeSeconds: null,
+      };
+    }
+  }
+
+  try {
+    await writeQueue;
+    const history = await readHistory();
+    const latestSnapshotAt = history.points.length
+      ? Math.max(...history.points.map((point) => point.capturedAt))
+      : null;
+    return {
+      backend: "file",
+      configured: !process.env.VERCEL,
+      reachable: true,
+      latestSnapshotAt,
+      latestSnapshotAgeSeconds:
+        latestSnapshotAt === null ? null : Math.max(0, Math.round((now - latestSnapshotAt) / 1000)),
+    };
+  } catch {
+    return {
+      backend: "file",
+      configured: !process.env.VERCEL,
+      reachable: false,
+      latestSnapshotAt: null,
+      latestSnapshotAgeSeconds: null,
+    };
+  }
 }
