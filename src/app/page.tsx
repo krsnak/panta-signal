@@ -74,6 +74,7 @@ export default async function Home({ searchParams }: PageProps) {
   const observedIds = new Set(observedMarkets.map((market) => market.id));
   const judgeFacingMarkets = titledMarkets
     .filter((market) => hasExplicitCatalogQuery || !isClearlyTestMarket(market))
+    .filter((market) => market.phase === "primary" || market.phase === "secondary")
     .sort((a, b) => {
       const score = (market: (typeof titledMarkets)[number]) =>
         (observedIds.has(market.id) ? 1000 : 0) +
@@ -87,9 +88,7 @@ export default async function Home({ searchParams }: PageProps) {
         ? judgeFacingMarkets
         : judgeFacingMarkets.slice(0, 6)
       : titledMarkets;
-  const liveMarkets = visibleMarkets.filter(
-    (market) => market.phase === "primary" || market.phase === "secondary",
-  );
+  const liveMarkets = visibleMarkets;
   const primarySignalMarket =
     observedMarkets[0] ??
     topMovers[0]?.market ??

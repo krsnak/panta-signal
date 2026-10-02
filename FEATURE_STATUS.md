@@ -330,6 +330,7 @@ Discovery correction:
 - Public Panta dashboard source inspection shows that dashboard discovery uses `MarketAPI.events.getEventRegistry() -> /events`, not the limited `/markets/` catalog we initially used.
 - Public registry endpoint: `https://production-api.balr.fun/api/v1/events`.
 - Registry currently exposes 193 events total and 13 current, unresolved markets (9 `secondary_active`, 4 `open`).
+- Canonical detail hydration currently marks 2 of those registry-current rows as `cancelled`; the homepage therefore filters on canonical `primary` / `secondary` phase before ranking and limiting.
 - Panta Signal now uses that public read-only registry only for discovery.
 - Each discovered PDA is still hydrated through the existing Panta market-detail API for canonical title, current probability, phase and volume.
 - Local `pk_test_` environments intentionally skip live hydration so a sandbox fixture cannot overwrite every registry market with the same test record.
