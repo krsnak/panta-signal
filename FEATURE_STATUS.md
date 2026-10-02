@@ -291,7 +291,20 @@ The next active work is not Function 2 and not F1v2.3. It is a short **submissio
 | S1.3 On-chain evidence | DONE | Homepage links to a Panta mainnet SecondaryLimitOrder transaction verified through Solana RPC, with explicit scope wording; local render, tests, lint and build verified. |
 | S1.4 Demote Wallet + Execution | DONE | Wallet and execution now live in a secondary Optional tools section, top navigation collapses them into Tools, and unavailable execution is a compact neutral state. Tests, lint, build and local render verified. |
 | S1.5 Reduce Market Explorer noise | DONE | Default explorer prioritizes observed/priced markets, suppresses clearly marked test fixtures when credible alternatives exist, limits the judge-facing default to six, and preserves full catalog access through search/filter. Tests, lint, build and local default/search renders verified. |
-| S1.6 Market detail provenance | NEXT | Explicitly label Panta API, durable Signal and Solana evidence sources. |
+| S1.6 Market detail provenance | DONE | Market detail labels Panta API, Panta Signal and Solana evidence sources and exposes Explorer links for valid trade signatures. Tests, lint, build and local detail render verified. |
+
+### Submission Sprint S1 result
+
+S1 is complete.
+
+- Judge-facing homepage story is clear and SolanaCZE/Colosseum-first.
+- Signal hero emphasizes movement, activity and evidence rather than internal implementation metrics.
+- A verified Panta mainnet transaction provides one-click Solana proof.
+- Wallet and execution are secondary optional tools.
+- Market Explorer is curated for a cleaner judge-facing default while preserving full catalog access.
+- Market detail explicitly separates Panta API data, durable Panta Signal observations and Solana-verifiable activity.
+- No speculative historical reconstruction was added.
+- No wallet signing or financial action was required.
 
 Audit conclusion:
 

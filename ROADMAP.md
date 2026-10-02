@@ -215,7 +215,7 @@ Goal: a judge understands the product within the first 30 seconds.
 - [x] Homepage states the problem and value proposition in one screen.
 - [ ] Signal Feed remains the hero capability; no research/debug concepts on the first screen.
 - [x] One clearly active live market demonstrates current probability + activity + freshness.
-- [ ] Market detail explains where the data comes from and distinguishes Panta API, durable history and Solana evidence.
+- [x] Market detail explains where the data comes from and distinguishes Panta API, durable history and Solana evidence.
 - [x] Remove or demote UI that looks unfinished, empty, duplicated or non-essential.
 
 ### S1 audit — 2026-10-02
@@ -347,6 +347,21 @@ Acceptance gate: first visible market cards look like a credible production prod
 - Add Explorer links to transaction signatures in Recent trades where a valid signature exists.
 
 Acceptance gate: data origin is obvious without reading technical documentation.
+
+**DONE 2026-10-02**
+
+- Added an `Evidence sources` row directly on market detail.
+- `Panta API` identifies market identity/current quote/phase/volume.
+- `Panta Signal` identifies durable observations, movement and interpretation.
+- `Solana` identifies public transaction signatures as independently auditable activity evidence.
+- Recent trade rows now link valid Solana signatures directly to Explorer.
+- Invalid/missing signatures are not converted into links.
+
+### S1 completion gate
+
+**COMPLETE — 2026-10-02**
+
+The judge-first product pass is complete. The next active sprint is **S2 — SolanaCZE proof**, starting with a production verification of the new judge flow before adding any new feature.
 
 ## Sprint S2 — SolanaCZE proof
 **Priority: P0**

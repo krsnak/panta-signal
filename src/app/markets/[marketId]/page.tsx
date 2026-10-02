@@ -52,6 +52,15 @@ function parseNumber(value: string | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function isValidSolanaSignature(value: string | null | undefined) {
+  return Boolean(
+    value &&
+      value.length >= 80 &&
+      value.length <= 90 &&
+      /^[1-9A-HJ-NP-Za-km-z]+$/.test(value),
+  );
+}
+
 export default async function MarketDetailPage({ params, searchParams }: PageProps) {
   const { marketId } = await params;
   const fallback = await searchParams;
@@ -185,6 +194,32 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
           </aside>
         </section>
 
+        <section className="mt-5 rounded-3xl border border-cyan-300/10 bg-cyan-300/[0.025] p-5">
+          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/70">
+            Evidence sources
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="text-sm font-semibold text-white/80">Panta API</div>
+              <div className="mt-1 text-xs leading-5 text-white/35">
+                Market identity, current YES/NO quote, phase and volume.
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="text-sm font-semibold text-white/80">Panta Signal</div>
+              <div className="mt-1 text-xs leading-5 text-white/35">
+                Durable observations, probability movement and signal interpretation.
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="text-sm font-semibold text-white/80">Solana</div>
+              <div className="mt-1 text-xs leading-5 text-white/35">
+                Public transaction signatures make recent Panta activity independently auditable on-chain.
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -295,13 +330,25 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
             {trades.length === 0 ? (
               <div className="rounded-xl border border-white/10 bg-black/15 p-5 text-sm text-white/45">No trades available for this market yet.</div>
             ) : trades.map((trade) => (
-              <div key={trade.id || trade.signature} className="grid gap-3 rounded-xl border border-white/10 bg-black/15 p-4 text-sm md:grid-cols-[1fr_auto_auto] md:items-center">
+              <div key={trade.id || trade.signature} className="grid gap-3 rounded-xl border border-white/10 bg-black/15 p-4 text-sm md:grid-cols-[1fr_auto_auto_auto] md:items-center">
                 <div className="min-w-0">
                   <div className="truncate text-white/70">{trade.wallet}</div>
                   <div className="mt-1 text-xs text-white/35">{formatDate(trade.blockTime)} · {trade.isPrimary ? "Primary" : "Secondary"}</div>
                 </div>
                 <div className="text-white/60">YES {trade.yesAmount} · NO {trade.noAmount}</div>
                 <div className="text-right text-white/35">fee {trade.feePaid} {trade.quoteAsset}</div>
+                {isValidSolanaSignature(trade.signature) ? (
+                  <a
+                    href={`https://explorer.solana.com/tx/${trade.signature}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="justify-self-start rounded-lg border border-cyan-300/15 bg-cyan-300/[0.05] px-3 py-2 text-xs font-medium text-cyan-100/80 transition hover:bg-cyan-300/10 md:justify-self-end"
+                  >
+                    Explorer ↗
+                  </a>
+                ) : (
+                  <span className="text-xs text-white/20 md:text-right">No signature</span>
+                )}
               </div>
             ))}
           </div>
