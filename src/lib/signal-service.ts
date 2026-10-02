@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   getMarketHistory,
+  getRecentlyObservedMarkets,
   recordMarketSnapshots,
   type MarketHistoryPoint,
 } from "@/lib/history";
@@ -12,6 +13,7 @@ import {
 } from "@/lib/panta";
 import {
   buildMarketSignal,
+  rankMarketSignals,
   type MarketSignal,
   type SignalQuoteState,
 } from "@/lib/signal-model";
@@ -95,4 +97,27 @@ export async function getCanonicalMarketSignal(
     quoteState,
     quoteObservedAt,
   });
+}
+
+export async function getCanonicalSignalFeed(options?: {
+  hours?: number;
+  limit?: number;
+  excludeMarketId?: string | null;
+}) {
+  const hours = Math.max(1, options?.hours ?? 24);
+  const limit = Math.min(Math.max(options?.limit ?? 6, 1), 10);
+  const observed = await getRecentlyObservedMarkets(hours, Math.max(limit * 2, 10));
+  const settled = await Promise.allSettled(
+    observed.map((market) => getCanonicalMarketSignal(market.id, hours)),
+  );
+  const signals = settled
+    .filter(
+      (result): result is PromiseFulfilledResult<MarketSignal> =>
+        result.status === "fulfilled",
+    )
+    .map((result) => result.value)
+    .filter((signal) => signal.kind !== "resolved")
+    .filter((signal) => signal.market.id !== options?.excludeMarketId);
+
+  return rankMarketSignals(signals).slice(0, limit);
 }

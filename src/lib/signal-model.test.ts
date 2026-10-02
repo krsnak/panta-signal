@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { MarketHistoryPoint } from "./history";
 import type { PantaMarket } from "./panta-core";
-import { buildMarketSignal } from "./signal-model";
+import { buildMarketSignal, rankMarketSignals } from "./signal-model";
 import type { MarketActivitySummary } from "./trade-signal";
 
 const market: PantaMarket = {
@@ -145,5 +145,44 @@ describe("canonical market signal", () => {
     });
 
     expect(signal.kind).toBe("resolved");
+  });
+
+  it("ranks movement before activity, then flat/collecting/resolved", () => {
+    const movement = buildMarketSignal({
+      market,
+      history: [point(0.5, 1_000_000), point(0.58, 4_600_000)],
+      activity: noActivity,
+      quoteState: "live",
+      quoteObservedAt: 4_600_000,
+      nowMs: 4_900_000,
+    });
+    const activity = buildMarketSignal({
+      market: { ...market, id: "activity", yesProbability: 0.52, noProbability: 0.48 },
+      history: [
+        { ...point(0.52, 1_000_000), marketId: "activity" },
+        { ...point(0.52, 4_600_000), marketId: "activity" },
+      ],
+      activity: { ...noActivity, tradeCount24h: 2, yesShares24h: 5 },
+      quoteState: "live",
+      quoteObservedAt: 4_600_000,
+      nowMs: 4_900_000,
+    });
+    const resolved = buildMarketSignal({
+      market: { ...market, id: "resolved", phase: "resolved", yesProbability: 1, noProbability: 0 },
+      history: [
+        { ...point(0.5, 1_000_000), marketId: "resolved" },
+        { ...point(1, 4_600_000), marketId: "resolved" },
+      ],
+      activity: noActivity,
+      quoteState: "resolved",
+      quoteObservedAt: 4_600_000,
+      nowMs: 4_900_000,
+    });
+
+    expect(rankMarketSignals([resolved, activity, movement]).map((x) => x.kind)).toEqual([
+      "movement",
+      "activity",
+      "resolved",
+    ]);
   });
 });

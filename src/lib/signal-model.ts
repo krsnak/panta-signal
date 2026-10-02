@@ -125,3 +125,44 @@ export function buildMarketSignal(input: {
     lastActivityAt,
   };
 }
+
+const SIGNAL_PRIORITY: Record<SignalKind, number> = {
+  movement: 4,
+  activity: 3,
+  flat: 2,
+  collecting: 1,
+  resolved: 0,
+};
+
+export function rankMarketSignals(signals: MarketSignal[]) {
+  return [...signals].sort((a, b) => {
+    const priority = SIGNAL_PRIORITY[b.kind] - SIGNAL_PRIORITY[a.kind];
+    if (priority !== 0) return priority;
+
+    if (a.kind === "movement" && b.kind === "movement") {
+      const aMove = Math.abs(a.movement.changePoints ?? 0);
+      const bMove = Math.abs(b.movement.changePoints ?? 0);
+      if (aMove !== bMove) return bMove - aMove;
+    }
+
+    if (a.kind === "activity" && b.kind === "activity") {
+      const aTrades = a.activity24h?.tradeCount24h ?? 0;
+      const bTrades = b.activity24h?.tradeCount24h ?? 0;
+      if (aTrades !== bTrades) return bTrades - aTrades;
+
+      const aShares =
+        (a.activity24h?.yesShares24h ?? 0) +
+        (a.activity24h?.noShares24h ?? 0);
+      const bShares =
+        (b.activity24h?.yesShares24h ?? 0) +
+        (b.activity24h?.noShares24h ?? 0);
+      if (aShares !== bShares) return bShares - aShares;
+    }
+
+    if (a.movement.observationCount !== b.movement.observationCount) {
+      return b.movement.observationCount - a.movement.observationCount;
+    }
+
+    return (b.lastActivityAt ?? 0) - (a.lastActivityAt ?? 0);
+  });
+}
