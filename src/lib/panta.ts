@@ -330,6 +330,62 @@ async function getCategories() {
   return Array.isArray(result.categories) ? result.categories : [];
 }
 
+async function getCatalogRows(options?: {
+  category?: string;
+  status?: string;
+  maxItems?: number;
+}) {
+  const maxItems = Math.min(Math.max(options?.maxItems ?? 200, 1), 250);
+  const rows: CatalogMarket[] = [];
+  let cursor: string | null = null;
+
+  while (rows.length < maxItems) {
+    const params = new URLSearchParams({
+      limit: String(Math.min(50, maxItems - rows.length)),
+    });
+    if (options?.category) params.set("category", options.category);
+    if (options?.status) params.set("status", options.status);
+    if (cursor) params.set("cursor", cursor);
+
+    const page = await pantaFetch<MarketListResponse>(
+      `markets/?${params.toString()}`,
+      {
+        timeoutMs: 3000,
+        retries: 1,
+        revalidate: 30,
+      },
+    );
+
+    const items = page.items ?? [];
+    rows.push(...items);
+    cursor = page.nextCursor?.trim() || null;
+    if (!cursor || items.length === 0) break;
+  }
+
+  return rows.slice(0, maxItems);
+}
+
+async function findCatalogMarket(marketId: string) {
+  let cursor: string | null = null;
+  for (let pageIndex = 0; pageIndex < 5; pageIndex += 1) {
+    const params = new URLSearchParams({ limit: "50" });
+    if (cursor) params.set("cursor", cursor);
+    const page = await pantaFetch<MarketListResponse>(
+      `markets/?${params.toString()}`,
+      {
+        timeoutMs: 2500,
+        retries: 1,
+        revalidate: 30,
+      },
+    );
+    const match = (page.items ?? []).find((market) => market.marketId === marketId);
+    if (match) return match;
+    cursor = page.nextCursor?.trim() || null;
+    if (!cursor) break;
+  }
+  return null;
+}
+
 export async function getMarketDetail(marketId: string): Promise<PantaMarket> {
   try {
     const detail = await pantaFetch<CatalogMarket>(
@@ -341,14 +397,20 @@ export async function getMarketDetail(marketId: string): Promise<PantaMarket> {
     // Fall through to the catalog row, which remains useful even if live RPC is unavailable.
   }
 
-  const catalog = await pantaFetch<MarketListResponse>("markets/?limit=50", {
-    timeoutMs: 2500,
-    retries: 1,
-    revalidate: 30,
-  });
-  const fallback = (catalog.items ?? []).find((market) => market.marketId === marketId);
+  const fallback = await findCatalogMarket(marketId);
   if (!fallback) throw new Error("Panta market metadata is temporarily unavailable");
   return normalizeMarket(fallback, fallback);
+}
+
+export async function getFullMarketCatalog(options?: {
+  category?: string;
+  status?: string;
+  maxItems?: number;
+}): Promise<PantaMarket[]> {
+  const rows = await getCatalogRows(options);
+  return rows
+    .filter((market) => Boolean(market.title?.trim()))
+    .map((market) => normalizeMarket(market, market));
 }
 
 export async function getMarketTrades(marketId: string, limit = 50): Promise<PantaTrade[]> {
@@ -407,26 +469,22 @@ export async function getMarketSnapshot(options?: {
   const limit = Math.min(Math.max(options?.limit ?? 12, 1), 20);
 
   try {
-    const params = new URLSearchParams({ limit: "50" });
-    if (category) params.set("category", category);
-    if (status) params.set("status", status);
-
-    const catalog = await pantaFetch<MarketListResponse>(`markets/?${params.toString()}`, {
-      timeoutMs: 3000,
-      retries: 1,
-      revalidate: 30,
+    const catalogRows = await getCatalogRows({
+      category,
+      status,
+      maxItems: Math.max(50, limit),
     });
     const categories = await getCategories().catch(() =>
       Array.from(
         new Set(
-          (catalog.items ?? [])
+          catalogRows
             .map((market) => market.category?.trim())
             .filter((value): value is string => Boolean(value)),
         ),
       ),
     );
 
-    const selected = (catalog.items ?? [])
+    const selected = catalogRows
       .filter((market) => Boolean(market.title?.trim()))
       .filter((market) => {
         if (!query) return true;

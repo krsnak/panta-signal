@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getMarketDetail, getMarketSnapshot, type PantaMarket } from "@/lib/panta";
+import { getFullMarketCatalog, getMarketDetail, type PantaMarket } from "@/lib/panta";
 import { recordMarketSnapshots } from "@/lib/history";
 
 export type CollectionResult = {
@@ -12,12 +12,9 @@ export type CollectionResult = {
 };
 
 export async function collectMarketSnapshots(): Promise<CollectionResult> {
-  const snapshot = await getMarketSnapshot({ limit: 20 });
-  if (snapshot.source !== "panta") {
-    throw new Error(snapshot.error || "Panta catalog is unavailable");
-  }
+  const catalog = await getFullMarketCatalog({ maxItems: 200 });
 
-  const candidates = snapshot.markets
+  const candidates = catalog
     .filter(
       (market) =>
         market.phase !== "resolved" &&
@@ -70,7 +67,7 @@ export async function collectMarketSnapshots(): Promise<CollectionResult> {
   await recordMarketSnapshots(collected);
 
   return {
-    catalogCount: snapshot.markets.length,
+    catalogCount: catalog.length,
     attempted: candidates.length,
     recorded: collected.length,
     unavailable,
