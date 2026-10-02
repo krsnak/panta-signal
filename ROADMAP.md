@@ -424,6 +424,22 @@ Current upstream constraint:
 - Only 1 is active; the other 6 are resolved.
 - Therefore the competition UI must not pretend there is a broad live market set when the upstream catalog does not currently provide one.
 
+### S2 public registry discovery correction — 2026-10-02
+
+**DONE**
+
+The earlier 7-market limitation was caused by using the wrong discovery endpoint.
+
+- Panta's public dashboard uses `/events` registry discovery.
+- Public registry currently returns 193 events and 13 current unresolved markets.
+- Current unresolved split at verification time:
+  - 9 `secondary_active`
+  - 4 `open`
+- Panta Signal now mirrors this discovery source.
+- Registry is discovery-only; canonical quote/detail/trade data still comes from the existing Panta API.
+- Homepage keeps the judge-facing list capped at six cards while the registry can provide the broader active universe.
+- Test API environments do not hydrate registry PDAs through the sandbox detail endpoint, preventing one fixture from being duplicated across all cards.
+
 ## Sprint S3 — Submission packaging
 **Priority: P0**
 

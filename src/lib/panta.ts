@@ -79,6 +79,24 @@ type PositionsResponse = {
 };
 
 const DEFAULT_BASE_URL = "https://live-api.panta.market/api/v1/";
+const PUBLIC_REGISTRY_URL = "https://production-api.balr.fun/api/v1/events";
+
+type PublicRegistryEvent = {
+  eventPda?: string;
+  status?: string;
+  Category?: string;
+  title?: string | null;
+  description?: string | null;
+  images?: string[];
+  endTime?: string;
+  isResolved?: boolean;
+  isDeleted?: boolean;
+};
+
+type PublicRegistryResponse = {
+  success?: boolean;
+  data?: PublicRegistryEvent[];
+};
 
 type PantaFetchOptions = {
   timeoutMs?: number;
@@ -499,6 +517,77 @@ export async function getFullMarketCatalog(options?: {
   return rows
     .filter((market) => Boolean(market.title?.trim()))
     .map((market) => normalizeMarket(market, market));
+}
+
+export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<PantaMarket[]> {
+  const response = await fetch(PUBLIC_REGISTRY_URL, {
+    headers: { Accept: "application/json" },
+    next: { revalidate: 30 },
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!response.ok) throw new Error(`Panta registry ${response.status}`);
+
+  const body = (await response.json()) as PublicRegistryResponse;
+  const now = Date.now();
+  const activeStatuses = new Set([
+    "open",
+    "premarket_closed",
+    "in_progress",
+    "ended",
+    "primary_closed",
+    "secondary_active",
+  ]);
+
+  const registryRows = (body.data ?? [])
+    .filter((event) => {
+      const endAt = event.endTime ? Date.parse(event.endTime) : Number.POSITIVE_INFINITY;
+      return (
+        Boolean(event.eventPda?.trim()) &&
+        !event.isDeleted &&
+        !event.isResolved &&
+        activeStatuses.has(event.status?.trim() || "") &&
+        (!Number.isFinite(endAt) || endAt > now)
+      );
+    })
+    .slice(0, Math.min(Math.max(limit, 1), 30));
+
+  const isTestEnvironment = getConfig().apiKey?.startsWith("pk_test_") === true;
+
+  return Promise.all(
+    registryRows.map(async (event) => {
+      const id = event.eventPda!.trim();
+      if (!isTestEnvironment) {
+        try {
+          return await getMarketDetail(id);
+        } catch {
+          // Fall back to public registry metadata below.
+        }
+      }
+      {
+        const phase =
+          event.status === "secondary_active"
+            ? "secondary"
+            : event.status === "open" || event.status === "in_progress"
+              ? "primary"
+              : event.status || "unknown";
+        return {
+          id,
+          title:
+            event.title?.trim() ||
+            event.description?.trim() ||
+            `Panta market ${id.slice(0, 8)}…`,
+          description: event.description?.trim() || "",
+          category: event.Category?.trim() || "other",
+          phase,
+          status: event.status?.trim() || phase,
+          yesProbability: null,
+          noProbability: null,
+          volumeUsdc: 0,
+          imageUrl: event.images?.[0] ?? null,
+        } satisfies PantaMarket;
+      }
+    }),
+  );
 }
 
 export async function getMarketTrades(marketId: string, limit = 50): Promise<PantaTrade[]> {

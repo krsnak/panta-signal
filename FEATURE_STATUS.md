@@ -312,8 +312,9 @@ S1 is complete.
 | --- | --- | --- |
 | S2.1 Production judge-flow verification | DONE | Production homepage and live market detail verified after S1; real Solana trade signatures and Explorer paths are present. |
 | S2.2 Homepage clarity correction | DONE | Competition homepage reduced to one product story: detect change → validate activity → verify on Solana. Resolved catalog cards and optional wallet/execution blocks removed from the judge-facing homepage. |
-| S2.3 Panta program relationship | NEXT | Make the Panta/Solana program relationship explicit to the judge without requiring repository knowledge. |
-| S2.4 Execution-path integrity check | TODO | Confirm existing quote/build/sign/submit path remains intact; no real spend required. |
+| S2.3 Public registry discovery | DONE | Market discovery now follows the same public `/events` registry source used by the Panta dashboard, then hydrates each PDA through the existing market-detail API. |
+| S2.4 Panta program relationship | NEXT | Make the Panta/Solana program relationship explicit to the judge without requiring repository knowledge. |
+| S2.5 Execution-path integrity check | TODO | Confirm existing quote/build/sign/submit path remains intact; no real spend required. |
 
 Production catalog finding — 2026-10-02:
 
@@ -323,6 +324,15 @@ Production catalog finding — 2026-10-02:
 - This is upstream Panta catalog state, not a local filtering bug.
 - Judge-facing homepage now shows only `primary` / `secondary` markets.
 - A broken `$zcat` card image came from a non-Cloudinary Google image URL while Next Image is configured only for Cloudinary. Resolved cards are no longer shown on the homepage, and non-Cloudinary images fall back to a safe placeholder instead of a broken image.
+
+Discovery correction:
+
+- Public Panta dashboard source inspection shows that dashboard discovery uses `MarketAPI.events.getEventRegistry() -> /events`, not the limited `/markets/` catalog we initially used.
+- Public registry endpoint: `https://production-api.balr.fun/api/v1/events`.
+- Registry currently exposes 193 events total and 13 current, unresolved markets (9 `secondary_active`, 4 `open`).
+- Panta Signal now uses that public read-only registry only for discovery.
+- Each discovered PDA is still hydrated through the existing Panta market-detail API for canonical title, current probability, phase and volume.
+- Local `pk_test_` environments intentionally skip live hydration so a sandbox fixture cannot overwrite every registry market with the same test record.
 
 Audit conclusion:
 

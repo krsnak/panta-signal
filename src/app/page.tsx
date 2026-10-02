@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getMarketSnapshot } from "@/lib/panta";
+import { getCurrentPublicRegistryMarkets, getMarketSnapshot } from "@/lib/panta";
 import {
   getPersistentTopMovers,
   getRecentlyObservedMarkets,
@@ -59,12 +59,15 @@ export default async function Home({ searchParams }: PageProps) {
     category: params.category,
     limit: 20,
   });
-  const [topMovers, signalCoverage, observedMarkets] = await Promise.all([
+  const [topMovers, signalCoverage, observedMarkets, publicRegistryMarkets] = await Promise.all([
     getPersistentTopMovers(),
     getSignalCoverage(),
     getRecentlyObservedMarkets(),
+    getCurrentPublicRegistryMarkets(20).catch(() => []),
   ]);
-  const titledMarkets = snapshot.markets.filter(
+  const discoveryMarkets =
+    publicRegistryMarkets.length > 0 ? publicRegistryMarkets : snapshot.markets;
+  const titledMarkets = discoveryMarkets.filter(
     (market) => !market.title.startsWith("Market "),
   );
   const hasExplicitCatalogQuery = Boolean(params.q?.trim() || params.category?.trim());
@@ -220,7 +223,7 @@ export default async function Home({ searchParams }: PageProps) {
                 </p>
               </div>
               <span className="text-xs text-white/25">
-                {liveMarkets.length} live · {titledMarkets.length} total in Panta catalog
+                {liveMarkets.length} live · public Panta registry
               </span>
             </div>
 
