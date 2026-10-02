@@ -100,17 +100,7 @@ export default async function Home({ searchParams }: PageProps) {
   return (
     <main className="min-h-screen bg-[#090d10] text-white">
       <header className="border-b border-[#1b2228] bg-[#0b0f12]">
-        <div className="mx-auto flex max-w-[1480px] items-center gap-5 px-5 py-3 lg:px-8">
-          <Link href="/" className="text-lg font-semibold tracking-tight">Panta Signal</Link>
-          <span className="hidden rounded-md bg-[#151b20] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:inline-flex">
-            Solana market intelligence
-          </span>
-          <div className="ml-auto flex items-center gap-2 text-xs text-white/45">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            {snapshot.source === "panta" ? "Live Panta API" : "Sample data"}
-          </div>
-        </div>
-        <div className="mx-auto flex max-w-[1480px] items-center gap-2 overflow-x-auto px-5 pb-3 lg:px-8">
+        <div className="mx-auto flex max-w-[1480px] items-center gap-3 px-5 py-3 lg:px-8">
           {[
             ["Signal Feed", "#featured"],
             ["Markets", "#live"],
@@ -123,6 +113,10 @@ export default async function Home({ searchParams }: PageProps) {
               {label}
             </a>
           ))}
+          <div className="ml-auto flex items-center gap-2 text-xs text-white/45">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            {snapshot.source === "panta" ? "Live Panta API" : "Sample data"}
+          </div>
         </div>
       </header>
 
