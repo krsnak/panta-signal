@@ -81,7 +81,8 @@ describe("canonical market signal", () => {
 
     expect(signal.kind).toBe("activity");
     expect(signal.movement.changePoints).toBe(0);
-    expect(signal.activity24h.yesShares24h).toBe(21.61);
+    expect(signal.activity24h?.yesShares24h).toBe(21.61);
+    expect(signal.activityState).toBe("live");
   });
 
   it("marks a fully observed quiet market as flat", () => {
@@ -111,6 +112,21 @@ describe("canonical market signal", () => {
     expect(signal.kind).toBe("collecting");
     expect(signal.movement.changePoints).toBeNull();
     expect(signal.movement.observationCount).toBe(1);
+  });
+
+  it("does not turn an unavailable trade tape into zero activity", () => {
+    const signal = buildMarketSignal({
+      market,
+      history: [point(0.58, 4_600_000)],
+      activity: null,
+      quoteState: "live",
+      quoteObservedAt: 4_600_000,
+      nowMs: 4_900_000,
+    });
+
+    expect(signal.activityState).toBe("unavailable");
+    expect(signal.activity24h).toBeNull();
+    expect(signal.kind).toBe("collecting");
   });
 
   it("never promotes a resolved market as an active signal", () => {

@@ -35,7 +35,8 @@ export type MarketSignal = {
     latestObservedAt: number | null;
     windowSeconds: number | null;
   };
-  activity24h: MarketActivitySummary;
+  activityState: "live" | "unavailable";
+  activity24h: MarketActivitySummary | null;
   lastActivityAt: number | null;
 };
 
@@ -47,7 +48,7 @@ function clampAgeSeconds(nowMs: number, timestamp: number | null) {
 export function buildMarketSignal(input: {
   market: PantaMarket;
   history: MarketHistoryPoint[];
-  activity: MarketActivitySummary;
+  activity: MarketActivitySummary | null;
   quoteState: SignalQuoteState;
   quoteObservedAt: number | null;
   nowMs?: number;
@@ -86,7 +87,7 @@ export function buildMarketSignal(input: {
     kind = "resolved";
   } else if (changePoints !== null && Math.abs(changePoints) > 0.0001) {
     kind = "movement";
-  } else if (input.activity.tradeCount24h > 0) {
+  } else if ((input.activity?.tradeCount24h ?? 0) > 0) {
     kind = "activity";
   } else if (hasMovementWindow) {
     kind = "flat";
@@ -96,7 +97,7 @@ export function buildMarketSignal(input: {
 
   const lastActivityAt = Math.max(
     latestObservedAt ?? 0,
-    input.activity.latestTradeAt ?? 0,
+    input.activity?.latestTradeAt ?? 0,
   ) || null;
 
   return {
@@ -119,6 +120,7 @@ export function buildMarketSignal(input: {
       latestObservedAt,
       windowSeconds,
     },
+    activityState: input.activity ? "live" : "unavailable",
     activity24h: input.activity,
     lastActivityAt,
   };
