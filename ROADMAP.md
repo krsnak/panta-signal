@@ -1,5 +1,26 @@
 # Panta Signal — Competition Roadmap
 
+> **Execution policy:** development now proceeds one user-facing function at a time. The active function must be functionally complete, production-verified, visually understandable, and recorded before the next function starts. See [FEATURE_STATUS.md](./FEATURE_STATUS.md) for the authoritative feature state and short-task log.
+
+## Active development focus
+
+**Function 1 — Signal Feed**
+
+All unrelated feature expansion is paused until Signal Feed is complete.
+
+Signal Feed must combine:
+
+- current Panta market detail,
+- durable probability history,
+- public trade activity,
+- freshness / data-quality state,
+
+into one immediately understandable answer to:
+
+> What changed, by how much, and is there real activity behind it?
+
+The implementation is intentionally split into short, independently verifiable tasks to avoid long-running work sessions and to keep project state recoverable after interruptions.
+
 ## Current implementation checkpoint — 2026-10-02
 
 Completed:
