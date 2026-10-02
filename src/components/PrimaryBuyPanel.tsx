@@ -44,6 +44,11 @@ type SolanaProvider = {
   signAndSendTransaction(transaction: VersionedTransaction): Promise<{ signature: string }>;
 };
 
+type ExecutionReceipt = {
+  signature: string;
+  status: string;
+};
+
 function getProvider() {
   const browser = window as typeof window & {
     solana?: SolanaProvider;
@@ -67,12 +72,21 @@ function decodeBase64(value: string) {
   return Buffer.from(value, "base64");
 }
 
+function explorerUrl(signature: string) {
+  return `https://explorer.solana.com/tx/${encodeURIComponent(signature)}`;
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: string; enabled: boolean }) {
   const [wallet, setWallet] = useState("");
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("5.00");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [order, setOrder] = useState<BuiltOrder | null>(null);
+  const [receipt, setReceipt] = useState<ExecutionReceipt | null>(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -88,6 +102,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
       setWallet(result.publicKey.toString());
       setQuote(null);
       setOrder(null);
+      setReceipt(null);
       setStatus("Wallet connected.");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Wallet connection failed.");
@@ -98,9 +113,14 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
 
   async function requestQuote() {
     if (!wallet) return setStatus("Connect a wallet first.");
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+      return setStatus("Enter a valid positive USDC amount.");
+    }
     try {
       setBusy(true);
       setOrder(null);
+      setReceipt(null);
       const result = await postJson<Quote>("/api/panta/orders/quote", {
         wallet,
         marketId,
@@ -121,6 +141,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
     if (!quote || !wallet) return;
     try {
       setBusy(true);
+      setReceipt(null);
       const result = await postJson<BuiltOrder>("/api/panta/orders/build", {
         quoteId: quote.quoteId,
         wallet,
@@ -166,6 +187,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
       setStatus("Waiting for wallet approval…");
       const sent = await provider.signAndSendTransaction(transaction);
       setStatus("Transaction broadcast. Registering signature with Panta…");
+      setReceipt({ signature: sent.signature, status: "submitted" });
 
       await postJson("/api/panta/orders/submit", {
         orderId: order.orderId,
@@ -173,12 +195,31 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         wallet,
       });
 
-      const verified = await postJson<{ status: string }>("/api/panta/orders/verify", {
-        orderId: order.orderId,
-        signature: sent.signature,
-        wallet,
-      });
-      setStatus(`Panta order status: ${verified.status}. Signature: ${sent.signature}`);
+      let verifiedStatus = "submitted";
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const verified = await postJson<{ status: string }>("/api/panta/orders/verify", {
+          orderId: order.orderId,
+          signature: sent.signature,
+          wallet,
+        });
+        verifiedStatus = verified.status;
+        setReceipt({ signature: sent.signature, status: verifiedStatus });
+        if (["confirmed", "failed", "expired"].includes(verifiedStatus)) break;
+        await sleep(1500);
+      }
+
+      if (verifiedStatus === "confirmed") {
+        setStatus("Confirmed by Panta. The Solana transaction receipt is available below.");
+        window.dispatchEvent(
+          new CustomEvent("panta:order-confirmed", {
+            detail: { wallet, marketId, signature: sent.signature },
+          }),
+        );
+      } else if (verifiedStatus === "failed" || verifiedStatus === "expired") {
+        setStatus(`Panta order ended with status: ${verifiedStatus}.`);
+      } else {
+        setStatus("Transaction was broadcast, but Panta confirmation is still pending. Use the receipt below to verify it on-chain.");
+      }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Signing or submission failed.");
     } finally {
@@ -217,7 +258,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
             <button
               key={value}
               type="button"
-              onClick={() => { setSide(value); setQuote(null); setOrder(null); }}
+              onClick={() => { setSide(value); setQuote(null); setOrder(null); setReceipt(null); }}
               className={`rounded-lg px-4 py-2 text-sm font-medium ${side === value ? (value === "yes" ? "bg-emerald-300 text-[#07110d]" : "bg-rose-300 text-[#07110d]") : "text-white/45"}`}
             >
               {value.toUpperCase()}
@@ -226,7 +267,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         </div>
         <input
           value={amount}
-          onChange={(event) => { setAmount(event.target.value); setQuote(null); setOrder(null); }}
+          onChange={(event) => { setAmount(event.target.value); setQuote(null); setOrder(null); setReceipt(null); }}
           inputMode="decimal"
           aria-label="USDC amount"
           className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none"
@@ -282,6 +323,26 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
               Review, sign & send in wallet
             </button>
           )}
+        </div>
+      )}
+
+      {receipt && (
+        <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-[0.16em] text-white/30">Solana receipt</div>
+              <div className="mt-2 text-sm font-medium text-white/75">Panta status: {receipt.status}</div>
+              <div className="mt-1 max-w-xl truncate font-mono text-xs text-white/35">{receipt.signature}</div>
+            </div>
+            <a
+              href={explorerUrl(receipt.signature)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/75 transition hover:border-white/25 hover:text-white"
+            >
+              Open in Solana Explorer ↗
+            </a>
+          </div>
         </div>
       )}
 
