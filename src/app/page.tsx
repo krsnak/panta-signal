@@ -8,7 +8,6 @@ import {
 } from "@/lib/history";
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
-import MarketActivitySignal from "@/components/MarketActivitySignal";
 import PrimarySignalCard from "@/components/PrimarySignalCard";
 
 type PageProps = {
@@ -84,8 +83,8 @@ export default async function Home({ searchParams }: PageProps) {
         </div>
         <div className="mx-auto flex max-w-[1480px] items-center gap-2 overflow-x-auto px-5 pb-3 lg:px-8">
           {[
-            ["Signal Pulse", "#featured"],
-            ["Top Movers", "#signal"],
+            ["Signal Feed", "#featured"],
+            ["More signals", "#signal"],
             ["Wallet", "#wallet"],
             ["Execute", "#execute"],
             ["Markets", "#live"],
@@ -104,16 +103,16 @@ export default async function Home({ searchParams }: PageProps) {
       <div className="mx-auto max-w-[1480px] px-5 py-6 lg:px-8">
         <section className="mb-5 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Market intelligence inside the Panta ecosystem</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Know what changed on Panta — and why it matters</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">
-              Same market environment, with signal tracking, wallet exposure and observed probability history layered on top.
+              Signal Feed combines live YES/NO pricing, durable probability history and public trades so you can see whether a market moved, trading activity picked up, or nothing meaningful changed.
             </p>
           </div>
           <div className="flex gap-2">
             {[
-              ["Catalog", titledMarkets.length],
-              ["Observed", signalCoverage.marketsObserved],
-              ["Signals", topMovers.length],
+              ["Observations", signalCoverage.observations],
+              ["Markets tracked", signalCoverage.marketsObserved],
+              ["Price movers", topMovers.length],
             ].map(([label, value]) => (
               <div key={label} className="min-w-[92px] rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
                 <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">{label}</div>
@@ -155,9 +154,9 @@ export default async function Home({ searchParams }: PageProps) {
           <div id="signal" className="rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
             <div className="flex items-end justify-between gap-4">
               <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Signal Feed</div>
-                <h2 className="mt-2 text-2xl font-semibold">Top Movers</h2>
-                <p className="mt-2 text-sm text-white/40">Ranked only from durable Panta price observations.</p>
+                <div className="text-xs uppercase tracking-[0.18em] text-white/30">More signals</div>
+                <h2 className="mt-2 text-2xl font-semibold">Observed price movers</h2>
+                <p className="mt-2 text-sm text-white/40">Additional markets ranked only from durable Panta price observations.</p>
               </div>
               <span className="text-xs text-white/30">24h</span>
             </div>
@@ -165,7 +164,7 @@ export default async function Home({ searchParams }: PageProps) {
             {topMovers.length === 0 ? (
               <div className="mt-5 rounded-2xl border border-white/10 bg-black/15 p-5 text-sm leading-6 text-white/45">
                 {signalCoverage.marketsWithHistory > 0
-                  ? "History is live, but no observed move currently clears the material-movement threshold."
+                  ? "No additional price mover currently clears the material-movement threshold. The primary Signal Feed card above remains useful because it also surfaces real trading activity."
                   : "Durable collection is active. The first mover appears after two real observations of the same market."}
               </div>
             ) : (
@@ -185,28 +184,6 @@ export default async function Home({ searchParams }: PageProps) {
               </div>
             )}
 
-            {observedMarkets.length > 0 && (
-              <div className="mt-6 border-t border-[#20282e] pt-5">
-                <div className="flex items-end justify-between gap-4">
-                  <div>
-                    <div className="text-xs uppercase tracking-[0.16em] text-white/25">Recent activity</div>
-                    <div className="mt-1 text-sm text-white/45">
-                      Trade-tape signals from the last 24 hours.
-                    </div>
-                  </div>
-                  <span className="text-[11px] text-white/25">shares, not USD</span>
-                </div>
-                <div className="mt-4 grid gap-3">
-                  {observedMarkets.slice(0, 3).map((market) => (
-                    <MarketActivitySignal
-                      key={market.id}
-                      marketId={market.id}
-                      title={market.title}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="grid gap-5">
