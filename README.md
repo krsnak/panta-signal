@@ -6,7 +6,7 @@ The product goal is deliberately broader than a REST dashboard: market discovery
 
 See [ROADMAP.md](./ROADMAP.md) for the competition strategy, reliability audit, implementation phases, test matrix, release gates, and submission plan.
 
-Development is currently **feature-gated**: one user-facing function is completed and production-verified before the next begins. The authoritative implementation state and short-task log are in [FEATURE_STATUS.md](./FEATURE_STATUS.md). The active function is **Function 1 — Signal Feed**.
+Development is **feature-gated**: one user-facing function is completed and production-verified before the next begins. The authoritative implementation state and short-task log are in [FEATURE_STATUS.md](./FEATURE_STATUS.md). **Function 1 — Signal Feed is complete; Function 2 has not been started under this workflow.**
 
 ## Current release
 

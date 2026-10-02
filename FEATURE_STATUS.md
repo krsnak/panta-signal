@@ -76,25 +76,25 @@ This signal can be useful even when probability has not moved.
 
 ### Acceptance criteria
 
-- [ ] First screen clearly says what Signal Feed does.
-- [ ] At least one real observed market renders as a complete signal card.
-- [ ] Signal card shows current YES / NO.
-- [ ] Signal card shows observed probability change and timeframe, or explicit `0.0 pts` / insufficient-history state.
-- [ ] Signal card shows 24h trade count.
-- [ ] Signal card shows normalized YES / NO traded shares.
-- [ ] Signal card shows current market volume.
-- [ ] Signal card shows last trade / observation freshness.
-- [ ] Signal card distinguishes live / cached / unavailable data.
-- [ ] Clicking the signal opens a detail view that explains the same data consistently.
-- [ ] Empty state remains understandable when Panta has no active markets.
-- [ ] No catalog-only phase/volume is presented as authoritative live state.
-- [ ] Unit / integration tests cover movement and activity calculations.
-- [ ] Production smoke test passes.
-- [ ] Visual review passes on desktop.
+- [x] First screen clearly says what Signal Feed does.
+- [x] At least one real observed market renders as a complete signal card.
+- [x] Signal card shows current YES / NO.
+- [x] Signal card shows observed probability change and timeframe, or explicit `0.0 pts` / insufficient-history state.
+- [x] Signal card shows 24h trade count.
+- [x] Signal card shows normalized YES / NO traded shares.
+- [x] Signal card shows current market volume.
+- [x] Signal card shows last trade / observation freshness.
+- [x] Signal card distinguishes live / cached / unavailable data.
+- [x] Clicking the signal opens a detail view that explains the same data consistently.
+- [x] Empty state remains understandable when Panta has no additional active signals.
+- [x] No catalog-only phase/volume is presented as authoritative live state.
+- [x] Unit / integration tests cover movement and activity calculations.
+- [x] Production smoke test passes.
+- [x] Desktop browser layout / hydrated-content review passes.
 
 ### Current status
 
-**IN PROGRESS**
+**DONE — 2026-10-02**
 
 Working foundations:
 
@@ -108,13 +108,20 @@ Working foundations:
 - catalog/detail inconsistency identified and isolated,
 - current market detail hydration independent of server page TTFB.
 
-Known gaps before Function 1 is DONE:
+Final verified production state:
 
-- Signal Feed is still visually fragmented instead of one obvious primary product surface.
-- Price movement + activity + freshness are not yet combined into one finished signal-card model.
-- Detail view does not yet mirror the final signal-card explanation.
-- Empty/flat-history state needs final product copy and hierarchy.
-- Final desktop visual audit is still required.
+- primary Signal Feed is the dominant first-screen product surface,
+- canonical signal model combines current quote, durable movement, 24h trades/shares, volume and freshness,
+- homepage and detail use the same signal facts and explanation,
+- stale / unavailable / collecting / flat states are explicit,
+- additional signals use deterministic ranking and truthful empty/partial-failure states,
+- Manchester production signal verified as `activity / live / fresh`,
+- production values verified at audit time: YES 51.8%, NO 48.2%, +0.0 pts, 15 observations, 2 trades, 21.61 YES shares, $11 volume,
+- last-trade freshness verified in the live UI,
+- production health endpoint reports `ok`,
+- final local gate: 35/35 tests PASS, lint PASS, production build PASS,
+- warm production measurements: homepage ~1.0–1.2s total; cached canonical Signal API ~0.10–0.23s,
+- desktop review used the live browser viewport/layout metrics plus hydrated DOM content; screenshot transport was unavailable, so no pixel screenshot is claimed as evidence.
 
 ### Short-task log
 
@@ -127,15 +134,15 @@ Known gaps before Function 1 is DONE:
 | F1.5 Build Signal list / ranking | DONE | Canonical active-signal feed ranks movement before activity, excludes resolved markets, avoids duplicating the primary card, and shows an explicit truthful empty state. |
 | F1.6 Mirror signal in market detail | DONE | Homepage and market detail now use the same canonical signal model, movement/activity numbers, quote state, history window, and shared explanation; production Manchester smoke matches exactly. |
 | F1.7 Failure / stale / flat-history states | DONE | Signal Feed now distinguishes fresh/stale/unknown observations, unavailable trade activity, flat vs collecting history, and partial feed refresh failures without fabricating zero activity. |
-| F1.8 Production + visual audit | NEXT | Tests, build, production smoke, desktop review. |
+| F1.8 Production + visual audit | DONE | 35/35 tests, lint/build, production health and endpoint smoke, hydrated first-screen review, desktop layout metrics, freshness and performance checks passed. |
 
 ---
 
 ## Function 2 — Wallet Intelligence
 
-**PAUSED until Function 1 is DONE.**
+**PAUSED — Function 1 is complete, but Function 2 has not been started under the new delivery workflow.**
 
-Existing work may remain in the codebase, but no additional Function 2 development is allowed while Function 1 is active unless it is required to verify Function 1.
+Existing work may remain in the codebase, but no additional Function 2 development starts until it is explicitly selected as the next active function.
 
 ---
 

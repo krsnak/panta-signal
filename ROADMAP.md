@@ -4,9 +4,9 @@
 
 ## Active development focus
 
-**Function 1 — Signal Feed**
+**Function 1 — Signal Feed: COMPLETE (2026-10-02)**
 
-All unrelated feature expansion is paused until Signal Feed is complete.
+Function 1 passed its functional, production, reliability and desktop browser audit. No next function is considered active until explicitly started under the feature-by-feature workflow.
 
 Signal Feed must combine:
 
@@ -19,7 +19,7 @@ into one immediately understandable answer to:
 
 > What changed, by how much, and is there real activity behind it?
 
-The implementation is intentionally split into short, independently verifiable tasks to avoid long-running work sessions and to keep project state recoverable after interruptions.
+The implementation was intentionally split into short, independently verifiable tasks to avoid long-running work sessions and to keep project state recoverable after interruptions. The authoritative completion evidence and acceptance checklist are in [FEATURE_STATUS.md](./FEATURE_STATUS.md).
 
 ## Current implementation checkpoint — 2026-10-02
 
