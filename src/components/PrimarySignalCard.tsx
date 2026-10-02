@@ -135,7 +135,11 @@ export default function PrimarySignalCard({
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">24h trades</div>
               <div className="mt-2 text-2xl font-semibold">{activity ? activity.tradeCount24h : signal?.activityState === "unavailable" ? "—" : "…"}</div>
-              <div className="mt-1 text-xs text-white/30">{activity ? `${compact(activity.primaryCount24h)} primary · ${compact(activity.secondaryCount24h)} secondary` : "public trade tape"}</div>
+              <div className="mt-1 text-xs text-white/30">
+                {activity
+                  ? `${compact(activity.primaryCount24h)} primary · last trade ${freshness(activity.latestTradeAgeSeconds)}`
+                  : "public trade tape"}
+              </div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">24h shares</div>

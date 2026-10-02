@@ -230,7 +230,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
               <div className="mt-1 text-xs text-white/30">
                 {signal?.activityState === "unavailable"
                   ? "trade tape unavailable"
-                  : `${signal?.activity24h?.primaryCount24h ?? 0} primary · ${signal?.activity24h?.secondaryCount24h ?? 0} secondary`}
+                  : `${signal?.activity24h?.primaryCount24h ?? 0} primary · last trade ${signal?.activity24h?.latestTradeAgeSeconds === null || signal?.activity24h?.latestTradeAgeSeconds === undefined ? "unknown" : signal.activity24h.latestTradeAgeSeconds < 3600 ? `${Math.max(1, Math.round(signal.activity24h.latestTradeAgeSeconds / 60))}m ago` : `${(signal.activity24h.latestTradeAgeSeconds / 3600).toFixed(1)}h ago`}`}
               </div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/15 p-4">

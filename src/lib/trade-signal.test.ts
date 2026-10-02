@@ -39,6 +39,7 @@ describe("trade activity signal", () => {
     expect(summary.yesShares24h).toBe(5);
     expect(summary.noShares24h).toBe(4);
     expect(summary.latestTradeAt).toBe(recentTime * 1000);
+    expect(summary.latestTradeAgeSeconds).toBe(60);
     expect(summary.observedRows).toBe(3);
   });
 
@@ -46,5 +47,6 @@ describe("trade activity signal", () => {
     const summary = summarizeMarketTrades([], 2_000_000 * 1000);
     expect(summary.tradeCount24h).toBe(0);
     expect(summary.latestTradeAt).toBeNull();
+    expect(summary.latestTradeAgeSeconds).toBeNull();
   });
 });

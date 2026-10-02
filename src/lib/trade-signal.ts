@@ -7,6 +7,7 @@ export type MarketActivitySummary = {
   yesShares24h: number;
   noShares24h: number;
   latestTradeAt: number | null;
+  latestTradeAgeSeconds: number | null;
   observedRows: number;
 };
 
@@ -19,20 +20,26 @@ export function summarizeMarketTrades(
     (trade) => trade.blockTime !== null && trade.blockTime >= cutoffSec,
   );
 
+  const latestTradeAt =
+    recent.length === 0
+      ? null
+      : Math.max(
+          ...recent
+            .map((trade) => trade.blockTime)
+            .filter((value): value is number => value !== null),
+        ) * 1000;
+
   return {
     tradeCount24h: recent.length,
     primaryCount24h: recent.filter((trade) => trade.isPrimary).length,
     secondaryCount24h: recent.filter((trade) => !trade.isPrimary).length,
     yesShares24h: recent.reduce((sum, trade) => sum + trade.yesAmount, 0),
     noShares24h: recent.reduce((sum, trade) => sum + trade.noAmount, 0),
-    latestTradeAt:
-      recent.length === 0
+    latestTradeAt,
+    latestTradeAgeSeconds:
+      latestTradeAt === null
         ? null
-        : Math.max(
-            ...recent
-              .map((trade) => trade.blockTime)
-              .filter((value): value is number => value !== null),
-          ) * 1000,
+        : Math.max(0, Math.round((nowMs - latestTradeAt) / 1000)),
     observedRows: trades.length,
   };
 }

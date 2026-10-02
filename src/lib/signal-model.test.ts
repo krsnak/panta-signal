@@ -47,6 +47,7 @@ const noActivity: MarketActivitySummary = {
   yesShares24h: 0,
   noShares24h: 0,
   latestTradeAt: null,
+  latestTradeAgeSeconds: null,
   observedRows: 0,
 };
 
