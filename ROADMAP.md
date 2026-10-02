@@ -485,6 +485,16 @@ S2 is complete. Next phase: S3 submission packaging and final judge-flow polish.
 - [ ] Capture production URL, GitHub URL, screenshots and transaction/on-chain evidence.
 - [ ] Submit SolanaCZE and Colosseum first; submit Panta sidetrack from the same release candidate.
 
+### S3 reliability fix — market quote fallback
+
+**DONE**
+
+- Removed blank-first rendering from judge-facing market cards.
+- Server-hydrated probability/phase/volume are now used as immediate initial values.
+- Browser refresh remains enabled but is bounded to 5 seconds.
+- Detail-route upstream failures fall back to the latest durable 24h snapshot when available.
+- Final state is explicit: live / cached / unavailable; no infinite `Loading live quote…`.
+
 ## Sprint S4 — Only after submission blockers are cleared
 **Priority: P2**
 

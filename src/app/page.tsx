@@ -267,7 +267,15 @@ export default async function Home({ searchParams }: PageProps) {
                       {market.title}
                     </h3>
                     <div className="mt-4">
-                      <MarketQuote marketId={market.id} />
+                      <MarketQuote
+                        marketId={market.id}
+                        initialQuote={{
+                          yesProbability: market.yesProbability,
+                          noProbability: market.noProbability,
+                          phase: market.phase,
+                          volumeUsdc: market.volumeUsdc,
+                        }}
+                      />
                     </div>
                   </div>
                 </Link>

@@ -331,6 +331,15 @@ Next: S3 submission packaging and judge-flow polish.
 | S3.7 Demo video | TODO | Record final release candidate; no real transaction required. |
 | S3.8 Final submissions | TODO | Colosseum + SolanaCZE first, then Panta Sidetrack from the same release candidate. |
 
+### Quote reliability correction — 2026-10-02
+
+- Root cause: market cards already had server-rendered registry/detail data, but the client `MarketQuote` discarded it and performed a second detail request before showing any values.
+- Production probing showed normal detail latency around 0.5s, a cold Bitcoin request around 3.8s, and repeated HYPE-vs-SOL 503 responses (`Panta market metadata is temporarily unavailable`).
+- Market cards now render the server-known quote immediately and refresh it in the background.
+- Client quote refresh has a 5s timeout.
+- If live refresh fails but a durable snapshot exists, the market-detail API now returns that snapshot with `quoteState: cached`.
+- If neither live nor cached price exists, UI shows em dashes and `Quote unavailable` instead of an indefinite loading state.
+
 Production catalog finding — 2026-10-02:
 
 - Current live Panta API returns 7 catalog markets.

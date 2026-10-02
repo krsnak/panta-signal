@@ -5,6 +5,12 @@ import { useEffect, useState } from "react";
 type MarketQuoteProps = {
   marketId: string;
   compact?: boolean;
+  initialQuote?: {
+    yesProbability: number | null;
+    noProbability: number | null;
+    phase: string;
+    volumeUsdc: number;
+  };
 };
 
 type ApiResponse = {
@@ -24,16 +30,24 @@ function pct(value: number | null) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-export default function MarketQuote({ marketId, compact = false }: MarketQuoteProps) {
-  const [quote, setQuote] = useState<{ yes: number | null; no: number | null } | null>(null);
-  const [phase, setPhase] = useState<string | null>(null);
-  const [volumeUsdc, setVolumeUsdc] = useState<number | null>(null);
+export default function MarketQuote({ marketId, compact = false, initialQuote }: MarketQuoteProps) {
+  const [quote, setQuote] = useState<{ yes: number | null; no: number | null } | null>(
+    initialQuote
+      ? { yes: initialQuote.yesProbability, no: initialQuote.noProbability }
+      : null,
+  );
+  const [phase, setPhase] = useState<string | null>(initialQuote?.phase ?? null);
+  const [volumeUsdc, setVolumeUsdc] = useState<number | null>(initialQuote?.volumeUsdc ?? null);
   const [quoteState, setQuoteState] = useState<ApiResponse["quoteState"] | null>(null);
   const [ageSeconds, setAgeSeconds] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      setFailed(true);
+      controller.abort();
+    }, 5000);
     fetch(`/api/panta/markets/${encodeURIComponent(marketId)}`, {
       signal: controller.signal,
     })
@@ -52,7 +66,10 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
       .catch((error) => {
         if ((error as Error).name !== "AbortError") setFailed(true);
       });
-    return () => controller.abort();
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [marketId]);
 
   if (compact) {
@@ -67,11 +84,13 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
             ? "resolved"
             : failed
               ? "unavailable"
-              : null;
+              : quote
+                ? "refreshing"
+                : null;
     return (
       <div className="flex items-center gap-3 text-xs">
-        <span className="text-emerald-300/75">YES {quote ? pct(quote.yes) : "…"}</span>
-        <span className="text-rose-300/75">NO {quote ? pct(quote.no) : "…"}</span>
+        <span className="text-emerald-300/75">YES {quote ? pct(quote.yes) : "—"}</span>
+        <span className="text-rose-300/75">NO {quote ? pct(quote.no) : "—"}</span>
         {stateLabel && <span className="text-white/25">{stateLabel}</span>}
         {phase && <span className="text-white/25">{phase}</span>}
       </div>
@@ -89,18 +108,20 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
           ? "Resolved outcome"
           : failed || quoteState === "unavailable"
             ? "Quote unavailable"
-            : "Loading live quote…";
+            : quote
+              ? "Refreshing live quote…"
+              : "Quote unavailable";
 
   return (
     <div>
       <div className="grid grid-cols-2 gap-2">
         <div className="rounded-xl bg-emerald-300/[0.08] px-3 py-2.5 text-emerald-200">
           <span className="text-xs text-white/35">YES</span>
-          <span className="float-right font-semibold">{quote ? pct(quote.yes) : "…"}</span>
+          <span className="float-right font-semibold">{quote ? pct(quote.yes) : "—"}</span>
         </div>
         <div className="rounded-xl bg-rose-300/[0.07] px-3 py-2.5 text-rose-200">
           <span className="text-xs text-white/35">NO</span>
-          <span className="float-right font-semibold">{quote ? pct(quote.no) : "…"}</span>
+          <span className="float-right font-semibold">{quote ? pct(quote.no) : "—"}</span>
         </div>
       </div>
       <div className="mt-2 text-[11px] text-white/25">

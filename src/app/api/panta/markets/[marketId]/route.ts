@@ -58,6 +58,36 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       },
     );
   } catch (error) {
+    const decoded = decodeURIComponent(marketId);
+    const cached = await getLatestMarketSnapshot(decoded, 24).catch(() => null);
+    if (cached) {
+      const observedAt = cached.capturedAt;
+      const ageSeconds = Math.max(0, Math.round((Date.now() - observedAt) / 1000));
+      return NextResponse.json(
+        {
+          market: {
+            id: cached.marketId,
+            title: cached.title,
+            description: cached.description,
+            category: cached.category,
+            phase: cached.phase,
+            status: cached.status,
+            imageUrl: cached.imageUrl,
+            yesProbability: cached.yesProbability,
+            noProbability: cached.noProbability,
+            volumeUsdc: cached.volumeUsdc,
+          },
+          quoteState: "cached",
+          observedAt,
+          ageSeconds,
+        },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=8, stale-while-revalidate=20",
+          },
+        },
+      );
+    }
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Unable to load market",
