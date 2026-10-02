@@ -1,5 +1,28 @@
 # Panta Signal — Competition Roadmap
 
+## Current implementation checkpoint — 2026-10-02
+
+Completed:
+- catalog-first homepage; live spot prices no longer block page TTFB
+- async per-market quote hydration with visibility-based loading
+- homepage cold TTFB measured at ~1.1s and warm at ~0.5s after the change
+- Panta request timeout / retry / cache policy
+- wallet lookup moved client-side so it cannot block the full page
+- Solana public-key validation and graceful upstream wallet errors
+- contract-normalization test suite (9 passing tests)
+- Postgres-capable durable history implementation behind `DATABASE_URL`
+- signal snapshot collector endpoint with controlled concurrency
+- production collector refuses ephemeral history when `DATABASE_URL` is missing
+- Signal Pulse hero replaces arbitrary featured-market positioning
+- Solana order flow now includes bounded Panta verify polling and a Solana Explorer receipt
+
+External integration blockers:
+- connect a persistent Postgres database and provide `DATABASE_URL`
+- configure `CRON_SECRET` and production collection schedule after the database is live
+- perform one explicit user-approved real Phantom transaction to prove the full mainnet golden path
+
+The current production build must not be considered signal-complete until durable history is connected and the collector has accumulated real observations.
+
 ## Mission
 
 Build one production-quality application that can be submitted to three aligned competitions:
