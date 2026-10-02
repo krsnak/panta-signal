@@ -6,7 +6,7 @@ The product goal is deliberately broader than a REST dashboard: market discovery
 
 See [ROADMAP.md](./ROADMAP.md) for the competition strategy, reliability audit, implementation phases, test matrix, release gates, and submission plan.
 
-## Current MVP
+## Current release
 
 - Next.js + TypeScript dashboard
 - live market explorer with search/category/phase filters

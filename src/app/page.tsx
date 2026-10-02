@@ -371,7 +371,7 @@ export default async function Home({ searchParams }: PageProps) {
         )}
 
         <footer className="mt-10 flex flex-col gap-2 border-t border-white/10 pt-6 text-sm text-white/35 sm:flex-row sm:items-center sm:justify-between">
-          <span>Panta Signal · Hackathon MVP</span>
+          <span>Panta Signal · Prediction market intelligence</span>
           <span className="font-medium text-white/55">Powered by Panta</span>
         </footer>
       </div>
