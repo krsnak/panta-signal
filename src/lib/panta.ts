@@ -556,16 +556,20 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
   const hydrateEvent = async (event: PublicRegistryEvent) => {
       const id = event.eventPda!.trim();
       if (!isTestEnvironment) {
-        try {
-          const detail = await getMarketDetail(id);
-          return {
-            ...detail,
-            description: detail.description || event.description?.trim() || "",
-            category: event.Category?.trim() || detail.category,
-            imageUrl: detail.imageUrl || event.images?.[0] || null,
-          } satisfies PantaMarket;
-        } catch {
-          // Fall back to public registry metadata below.
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          try {
+            const detail = await getMarketDetail(id);
+            return {
+              ...detail,
+              description: detail.description || event.description?.trim() || "",
+              category: event.Category?.trim() || detail.category,
+              imageUrl: detail.imageUrl || event.images?.[0] || null,
+            } satisfies PantaMarket;
+          } catch {
+            if (attempt < 2) {
+              await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
+            }
+          }
         }
       }
       {
