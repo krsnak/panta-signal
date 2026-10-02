@@ -218,6 +218,92 @@ Goal: a judge understands the product within the first 30 seconds.
 - [ ] Market detail explains where the data comes from and distinguishes Panta API, durable history and Solana evidence.
 - [ ] Remove or demote UI that looks unfinished, empty, duplicated or non-essential.
 
+### S1 audit — 2026-10-02
+
+Production homepage audit completed against the live deployment and current source.
+
+Current strengths:
+
+- The headline already explains that Panta Signal is about **change + meaning**, not merely market discovery.
+- The canonical Signal Feed hero is the strongest and most differentiated part of the product.
+- Current YES/NO, movement, 24h trades, shares, volume, observation count and freshness are all grounded in real Panta data.
+- The market detail page is technically strong: it combines current quote, signal explanation, durable history and recent trades without inventing missing data.
+- Wallet lookup and the non-custodial execution path are implemented honestly and fail gracefully.
+
+Current judge-facing weaknesses:
+
+- The header still labels the product **API Sidetrack**, which conflicts with the new SolanaCZE/Colosseum-first strategy.
+- The first screen gives equal navigation weight to Signal Feed, Wallet, Execute and Markets, weakening the single product story.
+- Three coverage counters (`Observations`, `Markets tracked`, `Price movers`) occupy prime hero space but do not explain user value to a first-time judge.
+- The primary signal card is information-rich, but the key takeaway is buried among four equal metric boxes and internal language such as `observations`, `activity state`, `durable history` and `quote state`.
+- Wallet Intelligence appears too early for the current submission story. It is useful, but secondary.
+- The Solana Execution block currently leads with an unavailable-primary-market warning. For a judge, this creates a visible negative state before the product has shown the stronger read-only on-chain proof.
+- Market Explorer is long and visually substantial, making the product drift back toward a generic Panta catalog.
+- The live catalog currently includes obvious test/noisy markets. These are valid upstream records but should not dominate the polished judge experience.
+- Market detail has good data provenance internally, but the user must infer it. Panta API data, durable Panta Signal observations and Solana-verifiable activity should be explicitly labelled as three evidence sources.
+
+### S1 implementation order
+
+#### S1.1 — Rewrite the first-screen story
+
+- Replace the `API Sidetrack` header badge with a neutral product descriptor such as `Solana market intelligence`.
+- Keep one primary headline and one concise supporting line.
+- Replace the three coverage counters with one compact evidence strip:
+  - live Panta market data,
+  - durable observations,
+  - Solana-verifiable activity.
+- Keep Signal Feed as the only dominant hero CTA.
+
+Acceptance gate: within one screen, a new viewer can answer **what the product does, what makes it different, and which data is real**.
+
+#### S1.2 — Simplify the Signal hero
+
+- Preserve current probability and movement as the dominant numbers.
+- Keep trade activity as supporting evidence.
+- Reduce internal implementation language in the visible hierarchy.
+- Convert `Observations`, freshness and source state into small trust/provenance labels rather than equal-weight KPIs.
+- Add one short sentence explaining the signal in plain product language.
+
+Acceptance gate: the hero can be understood without knowing Panta Signal's internal data architecture.
+
+#### S1.3 — Add explicit on-chain evidence
+
+- Add a compact `Verified on Solana` evidence element tied to a real public Panta transaction/signature.
+- Link to Solana Explorer.
+- Explain that Panta market activity is backed by Solana transactions; do not imply that every displayed probability point is reconstructed on-chain.
+- Use this as the primary SolanaCZE proof before asking the user to connect a wallet.
+
+Acceptance gate: a judge can click from Panta Signal to a real Panta-related Solana transaction in one action.
+
+#### S1.4 — Demote Wallet + Execution
+
+- Move Wallet Intelligence below the core Signal + on-chain evidence story.
+- Keep execution available, but present it as `Optional non-custodial execution path`, not a primary homepage promise.
+- Replace the large `no primary market available` warning with a compact truthful state.
+- Do not require a new signed transaction for S1.
+
+Acceptance gate: unavailable execution cannot make the product appear broken.
+
+#### S1.5 — Reduce Market Explorer noise
+
+- Keep Market Explorer, but visually demote it below signals/on-chain proof.
+- Exclude clearly marked test markets from the default judge-facing list where this can be done truthfully without altering upstream data.
+- Prefer markets with usable quote/activity data first.
+- Preserve search/filter access for the full live catalog.
+
+Acceptance gate: first visible market cards look like a credible production product, not an API dump.
+
+#### S1.6 — Market detail provenance pass
+
+- Add a compact evidence/provenance row:
+  - `Panta API` — market/current quote,
+  - `Panta Signal` — durable observations/movement,
+  - `Solana` — public activity/signatures.
+- Preserve current truthful fallback states.
+- Add Explorer links to transaction signatures in Recent trades where a valid signature exists.
+
+Acceptance gate: data origin is obvious without reading technical documentation.
+
 ## Sprint S2 — SolanaCZE proof
 **Priority: P0**
 

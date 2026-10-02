@@ -281,6 +281,25 @@ Active project priority is now:
 
 The next active work is not Function 2 and not F1v2.3. It is a short **submission sprint** focused on judge comprehension, visible Solana proof, production reliability and demo packaging. See `ROADMAP.md`.
 
+### Submission Sprint S1 — Judge-first product pass
+
+| Task | State | Goal |
+| --- | --- | --- |
+| S1 audit | DONE | Production homepage + market detail reviewed from a first-time judge perspective. |
+| S1.1 First-screen story | NEXT | Make product purpose, differentiation and trusted data sources obvious within one screen. |
+| S1.2 Simplify Signal hero | TODO | Preserve signal value while reducing internal implementation language. |
+| S1.3 On-chain evidence | TODO | Add one-click proof from Panta Signal to a real public Panta/Solana transaction. |
+| S1.4 Demote Wallet + Execution | TODO | Keep capability without letting unavailable execution look like a broken core feature. |
+| S1.5 Reduce Market Explorer noise | TODO | Prioritize credible live markets and demote catalog browsing. |
+| S1.6 Market detail provenance | TODO | Explicitly label Panta API, durable Signal and Solana evidence sources. |
+
+Audit conclusion:
+
+- No global redesign is required.
+- The core Signal Feed should remain intact.
+- The next work is mostly hierarchy, wording, provenance and one concrete Solana evidence path.
+- Avoid adding new research, charts or wallet features during S1.
+
 Implementation proceeds only if the research establishes:
 
 - a deterministic source of historical price/probability,
