@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMarketDetail } from "@/lib/panta";
-import { getLatestMarketSnapshot } from "@/lib/history";
+import {
+  getLatestMarketSnapshot,
+  recordMarketSnapshots,
+} from "@/lib/history";
 
 type RouteContext = {
   params: Promise<{ marketId: string }>;
@@ -13,6 +16,9 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const market = await getMarketDetail(decoded);
     const liveQuote =
       market.yesProbability !== null && market.noProbability !== null;
+    if (liveQuote && market.phase !== "resolved") {
+      await recordMarketSnapshots([market]);
+    }
     const cached = liveQuote ? null : await getLatestMarketSnapshot(decoded, 24);
     const quoteState =
       market.phase === "resolved"
