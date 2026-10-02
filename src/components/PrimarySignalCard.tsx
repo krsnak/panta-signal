@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { MarketSignal } from "@/lib/signal-model";
+import {
+  describeMarketSignal,
+  formatSignalWindow,
+  type MarketSignal,
+} from "@/lib/signal-model";
 
 type FallbackMarket = {
   id: string;
@@ -37,13 +41,6 @@ function money(value: number) {
   }).format(value);
 }
 
-function duration(seconds: number | null) {
-  if (seconds === null) return "collecting";
-  if (seconds < 3600) return `${Math.max(1, Math.round(seconds / 60))}m`;
-  if (seconds < 86400) return `${(seconds / 3600).toFixed(1)}h`;
-  return `${(seconds / 86400).toFixed(1)}d`;
-}
-
 function freshness(seconds: number | null) {
   if (seconds === null) return "unknown";
   if (seconds < 60) return "now";
@@ -57,24 +54,6 @@ function signalLabel(signal: MarketSignal) {
   if (signal.kind === "flat") return "Flat probability";
   if (signal.kind === "resolved") return "Resolved";
   return "Building history";
-}
-
-function signalSummary(signal: MarketSignal) {
-  const change = signal.movement.changePoints;
-  const activity = signal.activity24h;
-  if (signal.kind === "movement" && change !== null) {
-    return `YES moved ${change >= 0 ? "+" : ""}${change.toFixed(1)} pts across ${duration(signal.movement.windowSeconds)}, based on ${signal.movement.observationCount} real observations.`;
-  }
-  if (signal.kind === "activity" && activity) {
-    return `Probability is flat across ${signal.movement.observationCount} observations, but ${activity.tradeCount24h} trades moved ${compact(activity.yesShares24h)} YES and ${compact(activity.noShares24h)} NO shares in the last 24h.`;
-  }
-  if (signal.kind === "flat") {
-    return `No material probability move is visible across ${signal.movement.observationCount} stored observations. Panta Signal keeps the market visible without inventing a mover.`;
-  }
-  if (signal.kind === "resolved") {
-    return "This market is resolved, so it is not promoted as an active trading signal.";
-  }
-  return "The current quote is available, but more durable observations are required before a movement signal can be calculated.";
 }
 
 export default function PrimarySignalCard({
@@ -141,7 +120,7 @@ export default function PrimarySignalCard({
             {signal?.market.title ?? fallback.title}
           </h2>
           <p className="mt-4 max-w-3xl text-sm leading-6 text-white/50">
-            {signal ? signalSummary(signal) : "Combining Panta market detail, durable price history and the public trade tape into one signal."}
+            {signal ? describeMarketSignal(signal) : "Combining Panta market detail, durable price history and the public trade tape into one signal."}
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -150,7 +129,7 @@ export default function PrimarySignalCard({
               <div className={`mt-2 text-2xl font-semibold ${change === null ? "text-white/65" : change > 0 ? "text-emerald-200" : change < 0 ? "text-rose-200" : "text-white/80"}`}>
                 {change === null ? "Collecting" : `${change >= 0 ? "+" : ""}${change.toFixed(1)} pts`}
               </div>
-              <div className="mt-1 text-xs text-white/30">{signal ? `${signal.movement.observationCount} obs · ${duration(signal.movement.windowSeconds)}` : "durable history"}</div>
+              <div className="mt-1 text-xs text-white/30">{signal ? `${signal.movement.observationCount} obs · ${formatSignalWindow(signal.movement.windowSeconds)}` : "durable history"}</div>
             </div>
             <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
               <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">24h trades</div>

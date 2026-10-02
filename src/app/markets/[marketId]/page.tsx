@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getMarketDetail, getMarketTrades } from "@/lib/panta";
+import { getMarketTrades } from "@/lib/panta";
+import { getMarketHistory } from "@/lib/history";
+import { getCanonicalMarketSignal } from "@/lib/signal-service";
 import {
-  getLatestMarketSnapshot,
-  getMarketInsight,
-  recordMarketSnapshots,
-} from "@/lib/history";
+  describeMarketSignal,
+  formatSignalWindow,
+} from "@/lib/signal-model";
 import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
 
 type PageProps = {
@@ -55,13 +56,13 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   const { marketId } = await params;
   const fallback = await searchParams;
   const decodedMarketId = decodeURIComponent(marketId);
-  const [market, trades, cachedSnapshot] = await Promise.all([
-    getMarketDetail(decodedMarketId).catch(() => null),
+  const signal = await getCanonicalMarketSignal(decodedMarketId).catch(() => null);
+  const [trades, historyPoints] = await Promise.all([
     getMarketTrades(decodedMarketId, 20).catch(() => []),
-    getLatestMarketSnapshot(decodedMarketId, 24).catch(() => null),
+    getMarketHistory(decodedMarketId, 24).catch(() => []),
   ]);
   const fallbackVolume = parseNumber(fallback.volume);
-  const baseMarket = market ?? {
+  const baseMarket = signal?.market ?? {
     id: decodedMarketId,
     title: fallback.title || `Market ${decodedMarketId.slice(0, 8)}…`,
     description: fallback.description || "",
@@ -73,19 +74,6 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     volumeUsdc: fallbackVolume || 0,
     imageUrl: fallback.image || null,
   };
-  const hasLiveQuote =
-    market?.yesProbability !== null &&
-    market?.yesProbability !== undefined &&
-    market?.noProbability !== null &&
-    market?.noProbability !== undefined;
-  const quoteState =
-    baseMarket.phase === "resolved"
-      ? "resolved"
-      : hasLiveQuote
-        ? "live"
-        : cachedSnapshot
-          ? "cached"
-          : "unavailable";
   const resolvedMarket = {
     ...baseMarket,
     title:
@@ -96,26 +84,19 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     category: baseMarket.category === "other" && fallback.category ? fallback.category : baseMarket.category,
     phase: baseMarket.phase === "unknown" && fallback.phase ? fallback.phase : baseMarket.phase,
     status: baseMarket.status === "unknown" && fallback.status ? fallback.status : baseMarket.status,
-    yesProbability:
-      hasLiveQuote
-        ? baseMarket.yesProbability
-        : cachedSnapshot?.yesProbability ?? null,
-    noProbability:
-      hasLiveQuote
-        ? baseMarket.noProbability
-        : cachedSnapshot?.noProbability ?? null,
-    volumeUsdc: baseMarket.volumeUsdc || fallbackVolume || 0,
+    yesProbability: signal?.current.yesProbability ?? baseMarket.yesProbability,
+    noProbability: signal?.current.noProbability ?? baseMarket.noProbability,
+    volumeUsdc:
+      signal?.current.volumeUsdc ??
+      (baseMarket.volumeUsdc || fallbackVolume || 0),
     imageUrl: baseMarket.imageUrl || fallback.image || null,
   };
-  if (market && hasLiveQuote && market.phase !== "resolved") {
-    await recordMarketSnapshots([market]);
-  }
-  const insight = await getMarketInsight(resolvedMarket);
+  const quoteState = signal?.quoteState ?? "unavailable";
   const quoteAvailable =
     resolvedMarket.yesProbability !== null && resolvedMarket.noProbability !== null;
   const cachedObservedAt =
-    quoteState === "cached" && cachedSnapshot
-      ? new Date(cachedSnapshot.capturedAt).toLocaleTimeString("en-GB", {
+    quoteState === "cached" && signal?.current.observedAt
+      ? new Date(signal.current.observedAt).toLocaleTimeString("en-GB", {
           hour: "2-digit",
           minute: "2-digit",
         })
@@ -205,15 +186,70 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
         </section>
 
         <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6">
-          <div className="text-sm uppercase tracking-[0.18em] text-white/35">Signal insight</div>
-          <h2 className="mt-2 text-2xl font-semibold">Observed movement</h2>
-          <p className="mt-4 max-w-3xl leading-7 text-white/60">{insight.text}</p>
-          <div className="mt-4 text-xs text-white/30">
-            {insight.points.length} stored snapshot{insight.points.length === 1 ? "" : "s"} in the current 24h window.
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-sm uppercase tracking-[0.18em] text-white/35">Signal Feed</div>
+              <h2 className="mt-2 text-2xl font-semibold">Observed market signal</h2>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 uppercase text-white/50">
+                {signal?.kind ?? "unavailable"}
+              </span>
+              <span className="text-white/30">{signal?.quoteState ?? "unavailable"}</span>
+            </div>
+          </div>
+
+          <p className="mt-4 max-w-4xl leading-7 text-white/60">
+            {signal
+              ? describeMarketSignal(signal)
+              : "A canonical Panta Signal could not be built for this market right now."}
+          </p>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Price movement</div>
+              <div className="mt-2 text-2xl font-semibold">
+                {signal?.movement.changePoints === null || signal?.movement.changePoints === undefined
+                  ? "Collecting"
+                  : `${signal.movement.changePoints >= 0 ? "+" : ""}${signal.movement.changePoints.toFixed(1)} pts`}
+              </div>
+              <div className="mt-1 text-xs text-white/30">
+                {signal
+                  ? `${signal.movement.observationCount} obs · ${formatSignalWindow(signal.movement.windowSeconds)}`
+                  : "history unavailable"}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">24h trades</div>
+              <div className="mt-2 text-2xl font-semibold">
+                {signal?.activity24h?.tradeCount24h ?? "—"}
+              </div>
+              <div className="mt-1 text-xs text-white/30">
+                {signal?.activityState === "unavailable"
+                  ? "trade tape unavailable"
+                  : `${signal?.activity24h?.primaryCount24h ?? 0} primary · ${signal?.activity24h?.secondaryCount24h ?? 0} secondary`}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">24h shares</div>
+              <div className="mt-2 text-lg font-semibold text-emerald-200">
+                YES {signal?.activity24h ? signal.activity24h.yesShares24h.toFixed(2) : "—"}
+              </div>
+              <div className="mt-1 text-sm font-medium text-rose-200">
+                NO {signal?.activity24h ? signal.activity24h.noShares24h.toFixed(2) : "—"}
+              </div>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-black/15 p-4">
+              <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Market volume</div>
+              <div className="mt-2 text-2xl font-semibold">
+                ${resolvedMarket.volumeUsdc.toFixed(2)}
+              </div>
+              <div className="mt-1 text-xs text-white/30">Panta market detail</div>
+            </div>
           </div>
 
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/15 p-4">
-            {insight.points.length < 2 ? (
+            {historyPoints.length < 2 ? (
               <div className="flex h-44 items-center justify-center text-sm text-white/35">
                 Waiting for another snapshot before drawing the 24h probability line.
               </div>
@@ -222,7 +258,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 <div className="mb-3 flex items-center justify-between text-xs text-white/35">
                   <span>YES probability</span>
                   <span>
-                    {Math.round(insight.points[0].yesProbability * 100)}% → {Math.round(insight.points[insight.points.length - 1].yesProbability * 100)}%
+                    {Math.round(historyPoints[0].yesProbability * 100)}% → {Math.round(historyPoints[historyPoints.length - 1].yesProbability * 100)}%
                   </span>
                 </div>
                 <svg viewBox="0 0 100 100" className="h-44 w-full" preserveAspectRatio="none" role="img" aria-label="24 hour YES probability history">
@@ -230,7 +266,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                   <line x1="0" y1="50" x2="100" y2="50" stroke="currentColor" strokeOpacity="0.08" vectorEffect="non-scaling-stroke" />
                   <line x1="0" y1="75" x2="100" y2="75" stroke="currentColor" strokeOpacity="0.08" vectorEffect="non-scaling-stroke" />
                   <polyline
-                    points={historyPolyline(insight.points)}
+                    points={historyPolyline(historyPoints)}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"

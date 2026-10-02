@@ -166,3 +166,33 @@ export function rankMarketSignals(signals: MarketSignal[]) {
     return (b.lastActivityAt ?? 0) - (a.lastActivityAt ?? 0);
   });
 }
+
+export function formatSignalWindow(seconds: number | null) {
+  if (seconds === null) return "collecting";
+  if (seconds < 3600) return `${Math.max(1, Math.round(seconds / 60))}m`;
+  if (seconds < 86400) return `${(seconds / 3600).toFixed(1)}h`;
+  return `${(seconds / 86400).toFixed(1)}d`;
+}
+
+export function describeMarketSignal(signal: MarketSignal) {
+  const change = signal.movement.changePoints;
+  const activity = signal.activity24h;
+
+  if (signal.kind === "movement" && change !== null) {
+    return `YES moved ${change >= 0 ? "+" : ""}${change.toFixed(1)} pts across ${formatSignalWindow(signal.movement.windowSeconds)}, based on ${signal.movement.observationCount} real observations.`;
+  }
+
+  if (signal.kind === "activity" && activity) {
+    return `Probability is flat across ${signal.movement.observationCount} observations, but ${activity.tradeCount24h} trades moved ${activity.yesShares24h.toFixed(2)} YES and ${activity.noShares24h.toFixed(2)} NO shares in the last 24h.`;
+  }
+
+  if (signal.kind === "flat") {
+    return `No material probability move is visible across ${signal.movement.observationCount} stored observations. Panta Signal keeps the market visible without inventing a mover.`;
+  }
+
+  if (signal.kind === "resolved") {
+    return "This market is resolved, so it is not promoted as an active trading signal.";
+  }
+
+  return "The current quote is available, but more durable observations are required before a movement signal can be calculated.";
+}

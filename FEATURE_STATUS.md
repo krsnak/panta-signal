@@ -125,8 +125,8 @@ Known gaps before Function 1 is DONE:
 | F1.3 Expose canonical Signal API | DONE | One production endpoint now composes current detail, durable history, 24h trade activity, freshness, and explicit unavailable states into one signal object. |
 | F1.4 Build primary Signal Feed card | DONE | The first product surface now explains the market signal with live probability, observed movement, 24h trades/shares, volume, freshness, and truthful fallback states. |
 | F1.5 Build Signal list / ranking | DONE | Canonical active-signal feed ranks movement before activity, excludes resolved markets, avoids duplicating the primary card, and shows an explicit truthful empty state. |
-| F1.6 Mirror signal in market detail | NEXT | Same numbers and explanation on detail page. |
-| F1.7 Failure / stale / flat-history states | TODO | Complete truthful fallback states. |
+| F1.6 Mirror signal in market detail | IN PROGRESS | Detail now reads the same canonical signal model and shared explanation as the homepage; production smoke remains. |
+| F1.7 Failure / stale / flat-history states | NEXT | Complete truthful fallback states. |
 | F1.8 Production + visual audit | TODO | Tests, build, production smoke, desktop review. |
 
 ---

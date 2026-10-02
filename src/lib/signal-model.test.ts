@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { MarketHistoryPoint } from "./history";
 import type { PantaMarket } from "./panta-core";
-import { buildMarketSignal, rankMarketSignals } from "./signal-model";
+import {
+  buildMarketSignal,
+  describeMarketSignal,
+  rankMarketSignals,
+} from "./signal-model";
 import type { MarketActivitySummary } from "./trade-signal";
 
 const market: PantaMarket = {
@@ -184,5 +188,24 @@ describe("canonical market signal", () => {
       "activity",
       "resolved",
     ]);
+  });
+
+  it("describes activity using the same canonical facts", () => {
+    const signal = buildMarketSignal({
+      market: { ...market, yesProbability: 0.52, noProbability: 0.48 },
+      history: [point(0.52, 1_000_000), point(0.52, 4_600_000)],
+      activity: {
+        ...noActivity,
+        tradeCount24h: 2,
+        yesShares24h: 21.61081,
+      },
+      quoteState: "live",
+      quoteObservedAt: 4_600_000,
+      nowMs: 4_900_000,
+    });
+
+    expect(describeMarketSignal(signal)).toContain("2 trades");
+    expect(describeMarketSignal(signal)).toContain("21.61 YES");
+    expect(describeMarketSignal(signal)).toContain("2 observations");
   });
 });
