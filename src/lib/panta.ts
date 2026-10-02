@@ -223,17 +223,19 @@ async function pantaPost<T>(path: string, body: unknown): Promise<T> {
   });
 
   if (!response.ok) {
+    let code = "";
     let detail = "";
     try {
       const parsed = (await response.json()) as unknown;
-      const code = parsed && typeof parsed === "object" && typeof (parsed as { code?: unknown }).code === "string"
+      code = parsed && typeof parsed === "object" && typeof (parsed as { code?: unknown }).code === "string"
         ? (parsed as { code: string }).code
         : "";
-      detail = code || errorMessageFromBody(parsed);
+      detail = errorMessageFromBody(parsed);
     } catch {
       // Keep status-only error.
     }
-    throw new Error(`Panta API ${response.status}${detail ? `: ${detail}` : ""}`);
+    const suffix = [code, detail].filter(Boolean).join(" — ");
+    throw new Error(`Panta API ${response.status}${suffix ? `: ${suffix}` : ""}`);
   }
 
   return (await response.json()) as T;
