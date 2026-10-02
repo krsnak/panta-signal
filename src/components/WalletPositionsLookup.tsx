@@ -220,7 +220,12 @@ export default function WalletPositionsLookup() {
                   <div className="mt-3 text-sm font-medium text-white/80">
                     {position.market?.title || "Panta market"}
                   </div>
-                  <div className="mt-3 text-2xl font-semibold">{position.shares.toLocaleString()} shares</div>
+                  <div className="mt-3 text-2xl font-semibold">
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 4,
+                    }).format(position.shares)} shares
+                  </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <span className="text-white/55">
                       Est. value: {position.estimatedValueUsdc === null ? "—" : `$${position.estimatedValueUsdc.toFixed(2)}`}
