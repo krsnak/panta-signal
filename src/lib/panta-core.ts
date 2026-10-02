@@ -34,6 +34,13 @@ export function toNumber(value: string | number | null | undefined) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+export function fromSixDecimalBaseUnits(
+  value: string | number | null | undefined,
+) {
+  const parsed = toNumber(value);
+  return parsed === null ? null : parsed / 1_000_000;
+}
+
 export function normalizeStatus(value: string | undefined, phase: string | undefined) {
   const raw = value?.trim() || "";
   if (raw === "secondary_active") return "secondary";

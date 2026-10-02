@@ -2,6 +2,7 @@ import "server-only";
 import { PublicKey } from "@solana/web3.js";
 import {
   errorMessageFromBody,
+  fromSixDecimalBaseUnits,
   hasUsefulDetail,
   normalizeMarket,
   toNumber,
@@ -509,9 +510,9 @@ export async function getMarketTrades(marketId: string, limit = 50): Promise<Pan
     id: String(trade.id ?? ""),
     wallet: trade.wallet ?? "",
     isPrimary: Boolean(trade.isPrimary),
-    yesAmount: toNumber(trade.yesAmount) ?? 0,
-    noAmount: toNumber(trade.noAmount) ?? 0,
-    feePaid: toNumber(trade.feePaid) ?? 0,
+    yesAmount: fromSixDecimalBaseUnits(trade.yesAmount) ?? 0,
+    noAmount: fromSixDecimalBaseUnits(trade.noAmount) ?? 0,
+    feePaid: fromSixDecimalBaseUnits(trade.feePaid) ?? 0,
     blockTime: toNumber(trade.blockTime),
     signature: trade.signature ?? "",
     quoteAsset: trade.quoteAsset ?? "USDC",

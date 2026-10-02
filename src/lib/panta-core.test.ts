@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   errorMessageFromBody,
+  fromSixDecimalBaseUnits,
   hasUsefulDetail,
   normalizeMarket,
   normalizeStatus,
@@ -129,6 +130,12 @@ describe("Panta helper behavior", () => {
     expect(toNumber("0.52")).toBe(0.52);
     expect(toNumber("")).toBeNull();
     expect(toNumber("not-a-number")).toBeNull();
+  });
+
+  it("normalizes six-decimal catalog base units", () => {
+    expect(fromSixDecimalBaseUnits("1933475")).toBe(1.933475);
+    expect(fromSixDecimalBaseUnits(50000)).toBe(0.05);
+    expect(fromSixDecimalBaseUnits(null)).toBeNull();
   });
 
   it("extracts structured error messages without assuming one envelope", () => {
