@@ -495,6 +495,16 @@ S2 is complete. Next phase: S3 submission packaging and final judge-flow polish.
 - Detail-route upstream failures fall back to the latest durable 24h snapshot when available.
 - Final state is explicit: live / cached / unavailable; no infinite `Loading live quote…`.
 
+### S3 top-of-page UX pass
+
+**DONE — first pass**
+
+- Product name is the dominant hero element.
+- Hero explains the product in three steps: detect change → validate activity → verify on Solana.
+- Featured signal is visually smaller and positioned as the first concrete example.
+- Solana proof is now a compact two-action strip instead of a protocol-heavy explanation.
+- Continue UX review from the top down before final screenshot capture.
+
 ## Sprint S4 — Only after submission blockers are cleared
 **Priority: P2**
 

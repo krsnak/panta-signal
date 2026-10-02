@@ -340,6 +340,16 @@ Next: S3 submission packaging and judge-flow polish.
 - If live refresh fails but a durable snapshot exists, the market-detail API now returns that snapshot with `quoteState: cached`.
 - If neither live nor cached price exists, UI shows em dashes and `Quote unavailable` instead of an indefinite loading state.
 
+### Top-of-page UX correction — 2026-10-02
+
+- `Panta Signal` is now the dominant visual brand in the hero.
+- Positioning, one-line explanation and the 1/2/3 product model are grouped into one compact hero banner.
+- The featured signal card was reduced in visual weight so it reads as a product example, not a second hero.
+- The Solana proof block was simplified from protocol-heavy prose into two clearly explained proof actions:
+  - real Panta transaction
+  - executable Panta program
+- Low-value metadata pills were removed from the featured signal card.
+
 Production catalog finding — 2026-10-02:
 
 - Current live Panta API returns 7 catalog markets.

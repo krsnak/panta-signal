@@ -100,8 +100,8 @@ export default async function Home({ searchParams }: PageProps) {
   return (
     <main className="min-h-screen bg-[#090d10] text-white">
       <header className="border-b border-[#1b2228] bg-[#0b0f12]">
-        <div className="mx-auto flex max-w-[1480px] items-center gap-5 px-5 py-4 lg:px-8">
-          <Link href="/" className="text-2xl font-semibold tracking-tight">Panta Signal</Link>
+        <div className="mx-auto flex max-w-[1480px] items-center gap-5 px-5 py-3 lg:px-8">
+          <Link href="/" className="text-lg font-semibold tracking-tight">Panta Signal</Link>
           <span className="hidden rounded-md bg-[#151b20] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:inline-flex">
             Solana market intelligence
           </span>
@@ -127,30 +127,42 @@ export default async function Home({ searchParams }: PageProps) {
       </header>
 
       <div className="mx-auto max-w-[1480px] px-5 py-6 lg:px-8">
-        <section className="mb-5 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
-          <div>
-            <div className="mb-3 inline-flex rounded-full border border-emerald-300/15 bg-emerald-300/[0.05] px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-200/80">
-              Panta intelligence layer on Solana
-            </div>
-            <h1 className="max-w-4xl text-3xl font-semibold tracking-tight sm:text-4xl">
-              Panta Signal turns live prediction markets into clear, verifiable signals.
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">
-              We detect what changed, check whether public trading activity supports it, and link the evidence back to Solana.
-            </p>
+        <section className="relative mb-5 overflow-hidden rounded-[28px] border border-[#263038] bg-[#0d1317] p-6 sm:p-8 lg:p-10">
+          <div className="pointer-events-none absolute inset-0 opacity-70">
+            <div className="absolute -right-16 -top-24 h-80 w-80 rounded-full bg-emerald-300/[0.08] blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-40 w-[55%] bg-[linear-gradient(135deg,transparent_20%,rgba(94,234,212,.08)_20%,rgba(94,234,212,.08)_21%,transparent_21%,transparent_42%,rgba(167,139,250,.07)_42%,rgba(167,139,250,.07)_43%,transparent_43%)]" />
           </div>
-          <div className="grid min-w-[280px] gap-2 text-xs sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
-              <div className="font-medium text-white/75">1 · Detect change</div>
-              <div className="mt-1 text-white/30">Live YES/NO probability and movement</div>
+          <div className="relative grid gap-8 lg:grid-cols-[1.45fr_.75fr] lg:items-end">
+            <div>
+              <div className="mb-4 inline-flex rounded-full border border-emerald-300/20 bg-emerald-300/[0.06] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200/85">
+                Panta intelligence layer on Solana
+              </div>
+              <div className="text-5xl font-semibold tracking-[-0.045em] sm:text-6xl lg:text-7xl">
+                Panta Signal
+              </div>
+              <h1 className="mt-5 max-w-4xl text-2xl font-semibold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
+                Turn live prediction markets into clear, verifiable signals.
+              </h1>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-white/50 sm:text-base">
+                We detect what changed, check whether public trading activity supports it, and link the evidence back to Solana.
+              </p>
             </div>
-            <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
-              <div className="font-medium text-white/75">2 · Validate activity</div>
-              <div className="mt-1 text-white/30">Public trades + {signalCoverage.observations} stored observations</div>
-            </div>
-            <div className="rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
-              <div className="font-medium text-white/75">3 · Verify on Solana</div>
-              <div className="mt-1 text-white/30">Open real transaction signatures</div>
+            <div className="grid gap-2.5 text-sm">
+              {[
+                ["1", "Detect change", "Live YES/NO probability and movement"],
+                ["2", "Validate activity", `Public trades + ${signalCoverage.observations} stored observations`],
+                ["3", "Verify on Solana", "Open real transaction evidence"],
+              ].map(([step, title, description]) => (
+                <div key={step} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 backdrop-blur-sm">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-emerald-300/20 bg-emerald-300/10 text-xs font-semibold text-emerald-200">{step}</span>
+                    <div>
+                      <div className="font-medium text-white/85">{title}</div>
+                      <div className="mt-0.5 text-xs text-white/35">{description}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -183,41 +195,33 @@ export default async function Home({ searchParams }: PageProps) {
           )}
         </div>
 
-        <section className="mt-5 rounded-3xl border border-cyan-300/15 bg-cyan-300/[0.035] p-5 sm:p-6">
+        <section className="mt-4 rounded-2xl border border-cyan-300/15 bg-cyan-300/[0.03] px-5 py-4 sm:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-200/75">
-                Verified on Solana
-              </div>
-              <h2 className="mt-2 text-xl font-semibold">
-                Panta market activity is publicly auditable on-chain
-              </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-white/45">
-                This proof links to a real Panta mainnet transaction containing a SecondaryLimitOrder instruction.
-                It verifies public market activity on Solana; it does not claim that every historical probability point shown by Panta Signal is reconstructed on-chain.
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200/70">Verified on Solana</div>
+              <h2 className="mt-1.5 text-lg font-semibold">Real Panta activity, independently verifiable.</h2>
+              <p className="mt-1 max-w-3xl text-sm leading-5 text-white/40">
+                One link proves a real Panta transaction. The other opens the Panta program that runs on Solana mainnet.
               </p>
             </div>
-            <a
-              href="https://explorer.solana.com/tx/5sfY2QhPs3X57323BmgGhFf2A7x7gxkn4jBpxHQ8fPDMyq4bfPXvRBqQgrjJqi5w11bx4NcwSpysMdLRBn3roRq1"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex shrink-0 items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/15"
-            >
-              Open Solana transaction ↗
-            </a>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-[11px] text-white/35">
-            <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">Mainnet</span>
-            <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">SecondaryLimitOrder</span>
-            <span className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5">Public Panta transaction</span>
-            <a
-              href="https://explorer.solana.com/address/6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp"
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full border border-white/10 bg-black/15 px-3 py-1.5 text-cyan-100/70 transition hover:text-cyan-100"
-            >
-              Panta program 6gM5…bZMp ↗
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <a
+                href="https://explorer.solana.com/tx/5sfY2QhPs3X57323BmgGhFf2A7x7gxkn4jBpxHQ8fPDMyq4bfPXvRBqQgrjJqi5w11bx4NcwSpysMdLRBn3roRq1"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-xl border border-cyan-300/20 bg-cyan-300/10 px-4 py-2.5 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-300/15"
+              >
+                View real transaction ↗
+              </a>
+              <a
+                href="https://explorer.solana.com/address/6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-white/70 transition hover:bg-white/[0.08] hover:text-white"
+              >
+                View Panta program ↗
+              </a>
+            </div>
           </div>
         </section>
 
