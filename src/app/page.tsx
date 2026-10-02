@@ -9,6 +9,7 @@ import {
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
 import MarketActivitySignal from "@/components/MarketActivitySignal";
+import PrimarySignalCard from "@/components/PrimarySignalCard";
 
 type PageProps = {
   searchParams: Promise<{
@@ -16,14 +17,6 @@ type PageProps = {
     category?: string;
   }>;
 };
-
-function money(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
 
 function marketDetailHref(market: {
   id: string;
@@ -66,7 +59,11 @@ export default async function Home({ searchParams }: PageProps) {
   const titledMarkets = snapshot.markets.filter(
     (market) => !market.title.startsWith("Market "),
   );
-  const signalHero = topMovers[0] ?? null;
+  const primarySignalMarket =
+    observedMarkets[0] ??
+    topMovers[0]?.market ??
+    titledMarkets[0] ??
+    null;
   const actionableMarket =
     observedMarkets.find((market) => market.phase === "primary") ??
     titledMarkets.find((market) => market.phase === "primary") ??
@@ -130,68 +127,29 @@ export default async function Home({ searchParams }: PageProps) {
           <div className="mt-6 rounded-2xl border border-amber-300/20 bg-amber-300/[0.06] px-4 py-3 text-sm text-amber-100">Live Panta API configuration is not set yet, so the UI is running on clearly labeled sample data.</div>
         )}
 
-        <section className="rounded-2xl border border-[#20282e] bg-[#0f1418] p-3">
-          <form className="grid gap-3 md:grid-cols-[1fr_200px_auto]" action="/">
-            <input
-              name="q"
-              defaultValue={params.q || ""}
-              placeholder="Search title, description or category"
-              className="rounded-xl border border-[#273139] bg-[#0b0f12] px-4 py-3 text-sm outline-none transition focus:border-white/25 placeholder:text-white/25"
+        <div className="mt-5">
+          {primarySignalMarket ? (
+            <PrimarySignalCard
+              fallback={{
+                id: primarySignalMarket.id,
+                title: primarySignalMarket.title,
+                category: primarySignalMarket.category,
+                yesProbability: primarySignalMarket.yesProbability,
+                noProbability: primarySignalMarket.noProbability,
+                volumeUsdc: primarySignalMarket.volumeUsdc,
+              }}
+              href={marketDetailHref(primarySignalMarket)}
             />
-            <select name="category" defaultValue={params.category || ""} className="rounded-xl border border-[#273139] bg-[#0b0f12] px-4 py-3 text-sm">
-              <option value="">All categories</option>
-              {snapshot.categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-            <button className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">Search</button>
-          </form>
-        </section>
-
-        <section id="featured" className="mt-5 rounded-[24px] border border-[#20282e] bg-[#0f1418] p-6 sm:p-8">
-          <div className="text-xs uppercase tracking-[0.18em] text-white/30">Signal Pulse</div>
-          {signalHero ? (
-            <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_320px]">
-              <div>
-                <div className="flex items-center gap-3">
-                  <span className={signalHero.changePoints >= 0 ? "text-3xl font-semibold text-emerald-300" : "text-3xl font-semibold text-rose-300"}>
-                    {signalHero.changePoints >= 0 ? "+" : ""}{signalHero.changePoints.toFixed(1)} pts
-                  </span>
-                  <span className="text-sm text-white/35">24h observed move</span>
-                </div>
-                <h2 className="mt-4 text-3xl font-semibold leading-tight">{signalHero.market.title}</h2>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">{signalHero.insight}</p>
-                <Link href={marketDetailHref(signalHero.market)} className="mt-6 inline-flex rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10]">Inspect signal →</Link>
-              </div>
-              <div className="rounded-2xl border border-[#20282e] bg-[#0b0f12] p-4">
-                <div className="text-xs uppercase tracking-[0.14em] text-white/30">Current quote</div>
-                <div className="mt-4"><MarketQuote marketId={signalHero.market.id} /></div>
-                <div className="mt-4 text-xs text-white/30">{money(signalHero.market.volumeUsdc)} volume</div>
-              </div>
-            </div>
           ) : (
-            <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_300px]">
-              <div>
-                <h2 className="text-3xl font-semibold">
-                  {signalCoverage.marketsWithHistory > 0
-                    ? "No material probability move detected yet"
-                    : "Building the first real signal window"}
-                </h2>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">
-                  {signalCoverage.marketsWithHistory > 0
-                    ? "Real durable observations exist, but none has moved enough to qualify as a signal. Panta Signal will not promote a flat market just to fill the hero."
-                    : "Panta Signal will promote a market here only after durable price history proves a real probability move. No arbitrary featured market is substituted."}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-[#20282e] bg-[#0b0f12] p-4 text-sm text-white/45">
-                <div className="font-medium text-white/70">Signal coverage</div>
-                <div className="mt-3">{signalCoverage.observations} observations</div>
-                <div className="mt-1">{signalCoverage.marketsObserved} markets observed</div>
-                <div className="mt-1">{signalCoverage.marketsWithHistory} with 2+ snapshots</div>
-              </div>
-            </div>
+            <section id="featured" className="rounded-[28px] border border-[#263038] bg-[#0f1418] p-8">
+              <div className="text-xs uppercase tracking-[0.18em] text-white/30">Signal Feed</div>
+              <h2 className="mt-3 text-3xl font-semibold">Waiting for the first observable Panta market</h2>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">
+                Signal Feed requires a real Panta market detail or a durable stored observation. No sample mover is substituted.
+              </p>
+            </section>
           )}
-        </section>
+        </div>
 
         <section className="mt-5 grid gap-5 xl:grid-cols-[1.08fr_.92fr]">
           <div id="signal" className="rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
@@ -282,6 +240,21 @@ export default async function Home({ searchParams }: PageProps) {
 
         {titledMarkets.length > 0 && (
           <section id="live" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+            <form className="mb-6 grid gap-3 rounded-2xl border border-[#20282e] bg-[#0b0f12] p-3 md:grid-cols-[1fr_200px_auto]" action="/">
+              <input
+                name="q"
+                defaultValue={params.q || ""}
+                placeholder="Search title, description or category"
+                className="rounded-xl border border-[#273139] bg-[#090d10] px-4 py-3 text-sm outline-none transition focus:border-white/25 placeholder:text-white/25"
+              />
+              <select name="category" defaultValue={params.category || ""} className="rounded-xl border border-[#273139] bg-[#090d10] px-4 py-3 text-sm">
+                <option value="">All categories</option>
+                {snapshot.categories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <button className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">Search markets</button>
+            </form>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-white/30">Market Explorer</div>
