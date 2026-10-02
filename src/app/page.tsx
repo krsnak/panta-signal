@@ -44,6 +44,16 @@ function marketDetailHref(market: {
   return `/markets/${encodeURIComponent(market.id)}?${params.toString()}`;
 }
 
+function isClearlyTestMarket(market: { id: string; title: string; description: string }) {
+  const text = `${market.title} ${market.description}`.toLowerCase();
+  return (
+    market.id.startsWith("TestMarket") ||
+    /^\s*\[?test\]?\b/i.test(market.title) ||
+    text.includes("sandbox test") ||
+    text.includes("fixture market")
+  );
+}
+
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
   const snapshot = await getMarketSnapshot({
@@ -59,10 +69,27 @@ export default async function Home({ searchParams }: PageProps) {
   const titledMarkets = snapshot.markets.filter(
     (market) => !market.title.startsWith("Market "),
   );
+  const hasExplicitCatalogQuery = Boolean(params.q?.trim() || params.category?.trim());
+  const observedIds = new Set(observedMarkets.map((market) => market.id));
+  const judgeFacingMarkets = titledMarkets
+    .filter((market) => hasExplicitCatalogQuery || !isClearlyTestMarket(market))
+    .sort((a, b) => {
+      const score = (market: (typeof titledMarkets)[number]) =>
+        (observedIds.has(market.id) ? 1000 : 0) +
+        (market.yesProbability !== null && market.noProbability !== null ? 100 : 0) +
+        Math.min(market.volumeUsdc, 1000);
+      return score(b) - score(a);
+    });
+  const visibleMarkets =
+    judgeFacingMarkets.length > 0
+      ? hasExplicitCatalogQuery
+        ? judgeFacingMarkets
+        : judgeFacingMarkets.slice(0, 6)
+      : titledMarkets;
   const primarySignalMarket =
     observedMarkets[0] ??
     topMovers[0]?.market ??
-    titledMarkets[0] ??
+    visibleMarkets[0] ??
     null;
   const actionableMarket =
     observedMarkets.find((market) => market.phase === "primary") ??
@@ -242,8 +269,8 @@ export default async function Home({ searchParams }: PageProps) {
           </div>
         </section>
 
-        {titledMarkets.length > 0 && (
-          <section id="live" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+        {visibleMarkets.length > 0 && (
+          <section id="live" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0d1216] p-5 sm:p-6">
             <form className="mb-6 grid gap-3 rounded-2xl border border-[#20282e] bg-[#0b0f12] p-3 md:grid-cols-[1fr_200px_auto]" action="/">
               <input
                 name="q"
@@ -262,16 +289,20 @@ export default async function Home({ searchParams }: PageProps) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-xs uppercase tracking-[0.18em] text-white/30">Market Explorer</div>
-                <h2 className="mt-2 text-2xl font-semibold">Panta markets</h2>
+                <h2 className="mt-2 text-xl font-semibold">Explore the live Panta catalog</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
-                  The catalog supplies identity and discovery. Each card hydrates its actual phase, price and volume from Panta market detail so stale catalog metadata is never presented as trading state.
+                  Signals come first. This supporting explorer prioritizes observed and priced markets by default; search and category filters still query the full live catalog.
                 </p>
               </div>
-              <span className="text-xs text-white/25">{titledMarkets.length} catalog markets</span>
+              <span className="text-xs text-white/25">
+                {hasExplicitCatalogQuery
+                  ? `${visibleMarkets.length} matching markets`
+                  : `${visibleMarkets.length} highlighted · ${titledMarkets.length} total`}
+              </span>
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {titledMarkets.map((market) => (
+              {visibleMarkets.map((market) => (
                 <Link
                   key={market.id}
                   href={marketDetailHref(market)}

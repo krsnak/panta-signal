@@ -216,7 +216,7 @@ Goal: a judge understands the product within the first 30 seconds.
 - [ ] Signal Feed remains the hero capability; no research/debug concepts on the first screen.
 - [x] One clearly active live market demonstrates current probability + activity + freshness.
 - [ ] Market detail explains where the data comes from and distinguishes Panta API, durable history and Solana evidence.
-- [ ] Remove or demote UI that looks unfinished, empty, duplicated or non-essential.
+- [x] Remove or demote UI that looks unfinished, empty, duplicated or non-essential.
 
 ### S1 audit — 2026-10-02
 
@@ -327,6 +327,15 @@ Acceptance gate: unavailable execution cannot make the product appear broken.
 - Preserve search/filter access for the full live catalog.
 
 Acceptance gate: first visible market cards look like a credible production product, not an API dump.
+
+**DONE 2026-10-02**
+
+- Market Explorer is visually demoted beneath the core Signal, Solana proof and optional tools flow.
+- Default ordering prioritizes markets already observed by Panta Signal, then markets with usable catalog pricing/volume.
+- Clearly marked test/sandbox/fixture markets are suppressed from the default judge-facing list when credible alternatives exist.
+- Default view is capped at six highlighted markets.
+- Search/category queries still expose the matching full live catalog, including test entries when explicitly requested.
+- If a local/sandbox environment contains only a test fixture, it remains visible rather than producing a misleading empty catalog.
 
 #### S1.6 — Market detail provenance pass
 
