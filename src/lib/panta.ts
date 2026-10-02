@@ -472,7 +472,9 @@ export async function getMarketSnapshot(options?: {
     const catalogRows = await getCatalogRows({
       category,
       status,
-      maxItems: Math.max(50, limit),
+      // Public catalog pages can contain incomplete rows. Read a few cheap
+      // registry pages so search/discovery is not limited to the first 50.
+      maxItems: 150,
     });
     const categories = await getCategories().catch(() =>
       Array.from(
