@@ -438,6 +438,7 @@ The earlier 7-market limitation was caused by using the wrong discovery endpoint
 - Panta Signal now mirrors this discovery source.
 - Registry is discovery-only; canonical quote/detail/trade data still comes from the existing Panta API.
 - Canonical detail is authoritative for whether a discovered registry row is actually tradable; cancelled rows are removed before the homepage shortlist is ranked.
+- If canonical title hydration is unavailable for an individual row, that row remains discoverable internally but is suppressed from the judge-facing shortlist instead of showing a raw PDA fallback.
 - Homepage keeps the judge-facing list capped at six cards while the registry can provide the broader active universe.
 - Test API environments do not hydrate registry PDAs through the sandbox detail endpoint, preventing one fixture from being duplicated across all cards.
 

@@ -68,7 +68,9 @@ export default async function Home({ searchParams }: PageProps) {
   const discoveryMarkets =
     publicRegistryMarkets.length > 0 ? publicRegistryMarkets : snapshot.markets;
   const titledMarkets = discoveryMarkets.filter(
-    (market) => !market.title.startsWith("Market "),
+    (market) =>
+      !market.title.startsWith("Market ") &&
+      !market.title.startsWith("Panta market "),
   );
   const hasExplicitCatalogQuery = Boolean(params.q?.trim() || params.category?.trim());
   const observedIds = new Set(observedMarkets.map((market) => market.id));

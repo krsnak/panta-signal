@@ -336,6 +336,7 @@ Discovery correction:
 - Panta Signal now uses that public read-only registry only for discovery.
 - Each discovered PDA is still hydrated through the existing Panta market-detail API for canonical title, current probability, phase and volume.
 - Local `pk_test_` environments intentionally skip live hydration so a sandbox fixture cannot overwrite every registry market with the same test record.
+- Judge-facing homepage suppresses any registry row that still lacks a canonical human title after hydration; raw PDA fallback labels are never presented as competition market names.
 - Panta mainnet program `6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp` was independently verified through Solana RPC as an executable account owned by the upgradeable BPF loader.
 - Manchester 24h trade activity was independently cross-checked on Solana: four event-account transactions touched the market in the window, exactly two were successful `PrimaryOrderUsdc` trade instructions; the other two were graduation instructions (one failed). Therefore the app's `2 trades / 24h` count is correct for that market.
 
