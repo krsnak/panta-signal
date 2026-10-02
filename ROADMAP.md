@@ -9,12 +9,16 @@ Completed:
 - Panta request timeout / retry / cache policy
 - wallet lookup moved client-side so it cannot block the full page
 - Solana public-key validation and graceful upstream wallet errors
-- contract-normalization test suite (9 passing tests)
+- contract + input-validation test suite (18 passing tests)
 - Postgres-capable durable history implementation behind `DATABASE_URL`
 - signal snapshot collector endpoint with controlled concurrency
 - production collector refuses ephemeral history when `DATABASE_URL` is missing
 - Signal Pulse hero replaces arbitrary featured-market positioning
 - Solana order flow now includes bounded Panta verify polling and a Solana Explorer receipt
+- public GitHub CI verifies npm install, tests, lint, production build, and high/critical dependency audit
+- quote state is explicit: live / cached / unavailable / resolved
+- successful UI quote hydration also records authoritative durable snapshots as a collector fallback
+- guarded create-market bootstrap API is prepared for a controlled primary-market demo, but remains disabled by default
 
 External integration blockers:
 - connect a persistent Postgres database and provide `DATABASE_URL`
