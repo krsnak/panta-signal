@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
@@ -14,6 +15,7 @@ type FallbackMarket = {
   yesProbability: number | null;
   noProbability: number | null;
   volumeUsdc: number;
+  imageUrl?: string | null;
 };
 
 type ApiResponse = {
@@ -125,17 +127,36 @@ export default function PrimarySignalCard({
         </div>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-[1fr_360px]">
-        <div className="p-5 sm:p-6">
-          <div className="text-xs uppercase tracking-[0.16em] text-white/30">{fallback.category}</div>
-          <h2 className="mt-2 max-w-4xl text-xl font-semibold leading-tight tracking-[-0.02em] sm:text-2xl">
-            {signal?.market.title ?? fallback.title}
-          </h2>
-          {signal && (
-            <div className="mt-3 text-sm leading-5 text-white/60">
-              {plainSignalTakeaway(signal)}
+      <div className="grid gap-0 lg:grid-cols-[300px_1fr_330px]">
+        <div className="relative min-h-[220px] overflow-hidden border-b border-[#20282e] bg-[#0b0f12] lg:border-b-0 lg:border-r">
+          {fallback.imageUrl?.includes("res.cloudinary.com") ? (
+            <Image
+              src={fallback.imageUrl}
+              alt={signal?.market.title ?? fallback.title}
+              fill
+              sizes="300px"
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_35%_30%,rgba(94,234,212,.12),transparent_45%),linear-gradient(160deg,#101820,#0b0f12)]">
+              <span className="text-xs uppercase tracking-[0.18em] text-white/25">Panta market</span>
             </div>
           )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+            <span className="inline-flex rounded-full bg-black/45 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/65 backdrop-blur">
+              {fallback.category}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-5 sm:p-6">
+          <h2 className="max-w-4xl text-xl font-semibold leading-tight tracking-[-0.02em] sm:text-2xl">
+            {signal?.market.title ?? fallback.title}
+          </h2>
+          <div className="mt-2 text-sm leading-5 text-white/55">
+            {signal ? plainSignalTakeaway(signal) : "Loading the latest grounded market signal…"}
+          </div>
 
           <div className="mt-4 grid gap-2.5 sm:grid-cols-3">
             <div className="rounded-lg border border-white/10 bg-black/15 px-3.5 py-3">

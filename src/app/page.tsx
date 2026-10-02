@@ -175,6 +175,7 @@ export default async function Home({ searchParams }: PageProps) {
                 yesProbability: primarySignalMarket.yesProbability,
                 noProbability: primarySignalMarket.noProbability,
                 volumeUsdc: primarySignalMarket.volumeUsdc,
+                imageUrl: primarySignalMarket.imageUrl,
               }}
               href={marketDetailHref(primarySignalMarket)}
             />
