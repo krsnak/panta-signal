@@ -80,9 +80,12 @@ The create-market bootstrap API is disabled unless:
 
 ```text
 PANTA_MARKET_BOOTSTRAP_ENABLED=true
+PANTA_MARKET_BOOTSTRAP_SECRET=<server-side secret>
 ```
 
-It exists only to prepare a controlled primary market for the competition demo if needed. Creating a live Panta market can incur an on-chain USDC creation fee and therefore must not be enabled/executed without explicit operator approval.
+When enabled, every bootstrap request must also supply the matching private `X-Bootstrap-Secret` header.
+
+It exists only to prepare a controlled primary market for the competition demo if needed. Creating a live Panta market can incur an on-chain USDC creation fee and therefore must not proceed to wallet signing/broadcast without explicit operator approval.
 
 ## Dependency audit
 
@@ -106,6 +109,7 @@ Required production secrets/configuration:
 
 Optional guarded bootstrap:
 - `PANTA_MARKET_BOOTSTRAP_ENABLED`
+- `PANTA_MARKET_BOOTSTRAP_SECRET`
 
 Secrets must remain server-side and must never use a `NEXT_PUBLIC_` prefix.
 

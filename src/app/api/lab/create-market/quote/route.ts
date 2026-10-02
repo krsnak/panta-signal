@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { quoteMarketCreate } from "@/lib/panta";
 import {
+  bootstrapAuthorized,
+  bootstrapEnabled,
+} from "@/lib/bootstrap-auth";
+import {
   isPantaCategory,
   isPublicHttpUrl,
   isSolanaPublicKey,
   isUnixSecond,
 } from "@/lib/validation";
 
-function enabled() {
-  return process.env.PANTA_MARKET_BOOTSTRAP_ENABLED === "true";
-}
-
 export async function POST(request: NextRequest) {
-  if (!enabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!bootstrapEnabled()) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!bootstrapAuthorized(request)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
     const body = await request.json() as {
