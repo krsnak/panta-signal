@@ -291,6 +291,11 @@ export async function getMarketHistory(marketId: string, hours = 24) {
     .sort((a, b) => a.capturedAt - b.capturedAt);
 }
 
+export async function getLatestMarketSnapshot(marketId: string, hours = 24) {
+  const points = await getMarketHistory(marketId, hours);
+  return points.length > 0 ? points[points.length - 1] : null;
+}
+
 function buildInsight(baseline: MarketHistoryPoint, latest: MarketHistoryPoint) {
   const from = Math.round(baseline.yesProbability * 100);
   const to = Math.round(latest.yesProbability * 100);

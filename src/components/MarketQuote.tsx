@@ -12,6 +12,8 @@ type ApiResponse = {
     yesProbability: number | null;
     noProbability: number | null;
   };
+  quoteState?: "live" | "cached" | "resolved" | "unavailable";
+  ageSeconds?: number | null;
 };
 
 function pct(value: number | null) {
@@ -24,6 +26,8 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
   const [quote, setQuote] = useState<{ yes: number | null; no: number | null } | null>(null);
+  const [quoteState, setQuoteState] = useState<ApiResponse["quoteState"] | null>(null);
+  const [ageSeconds, setAgeSeconds] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -55,6 +59,8 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
           yes: body.market?.yesProbability ?? null,
           no: body.market?.noProbability ?? null,
         });
+        setQuoteState(body.quoteState ?? "unavailable");
+        setAgeSeconds(body.ageSeconds ?? null);
       })
       .catch((error) => {
         if ((error as Error).name !== "AbortError") setFailed(true);
@@ -63,14 +69,39 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
   }, [marketId, visible]);
 
   if (compact) {
+    const stateLabel =
+      quoteState === "cached"
+        ? ageSeconds !== null
+          ? `cached ${Math.max(1, Math.round(ageSeconds / 60))}m`
+          : "cached"
+        : quoteState === "live"
+          ? "live"
+          : quoteState === "resolved"
+            ? "resolved"
+            : failed
+              ? "unavailable"
+              : null;
     return (
       <div ref={ref} className="flex items-center gap-3 text-xs">
         <span className="text-emerald-300/75">YES {quote ? pct(quote.yes) : "…"}</span>
         <span className="text-rose-300/75">NO {quote ? pct(quote.no) : "…"}</span>
-        {failed && <span className="text-white/25">quote unavailable</span>}
+        {stateLabel && <span className="text-white/25">{stateLabel}</span>}
       </div>
     );
   }
+
+  const stateLabel =
+    quoteState === "cached"
+      ? ageSeconds !== null
+        ? `Cached ${Math.max(1, Math.round(ageSeconds / 60))} min ago`
+        : "Cached quote"
+      : quoteState === "live"
+        ? "Live quote"
+        : quoteState === "resolved"
+          ? "Resolved outcome"
+          : failed || quoteState === "unavailable"
+            ? "Quote unavailable"
+            : "Loading live quote…";
 
   return (
     <div ref={ref}>
@@ -85,7 +116,7 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
         </div>
       </div>
       <div className="mt-2 text-[11px] text-white/25">
-        {failed ? "Live quote unavailable" : quote ? "Live quote" : "Loading live quote…"}
+        {stateLabel}
       </div>
     </div>
   );

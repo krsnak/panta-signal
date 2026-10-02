@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getMarketDetail, getMarketTrades } from "@/lib/panta";
-import { getMarketInsight, recordMarketSnapshots } from "@/lib/history";
+import {
+  getLatestMarketSnapshot,
+  getMarketInsight,
+  recordMarketSnapshots,
+} from "@/lib/history";
 import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
 
 type PageProps = {
@@ -51,12 +55,11 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   const { marketId } = await params;
   const fallback = await searchParams;
   const decodedMarketId = decodeURIComponent(marketId);
-  const [market, trades] = await Promise.all([
+  const [market, trades, cachedSnapshot] = await Promise.all([
     getMarketDetail(decodedMarketId).catch(() => null),
     getMarketTrades(decodedMarketId, 20).catch(() => []),
+    getLatestMarketSnapshot(decodedMarketId, 24).catch(() => null),
   ]);
-  const fallbackYes = parseNumber(fallback.yes);
-  const fallbackNo = parseNumber(fallback.no);
   const fallbackVolume = parseNumber(fallback.volume);
   const baseMarket = market ?? {
     id: decodedMarketId,
@@ -65,11 +68,24 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     category: fallback.category || "other",
     phase: fallback.phase || "unknown",
     status: fallback.status || "unknown",
-    yesProbability: fallbackYes,
-    noProbability: fallbackNo,
+    yesProbability: null,
+    noProbability: null,
     volumeUsdc: fallbackVolume || 0,
     imageUrl: fallback.image || null,
   };
+  const hasLiveQuote =
+    market?.yesProbability !== null &&
+    market?.yesProbability !== undefined &&
+    market?.noProbability !== null &&
+    market?.noProbability !== undefined;
+  const quoteState =
+    baseMarket.phase === "resolved"
+      ? "resolved"
+      : hasLiveQuote
+        ? "live"
+        : cachedSnapshot
+          ? "cached"
+          : "unavailable";
   const resolvedMarket = {
     ...baseMarket,
     title:
@@ -80,15 +96,30 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     category: baseMarket.category === "other" && fallback.category ? fallback.category : baseMarket.category,
     phase: baseMarket.phase === "unknown" && fallback.phase ? fallback.phase : baseMarket.phase,
     status: baseMarket.status === "unknown" && fallback.status ? fallback.status : baseMarket.status,
-    yesProbability: baseMarket.yesProbability ?? fallbackYes,
-    noProbability: baseMarket.noProbability ?? fallbackNo,
+    yesProbability:
+      hasLiveQuote
+        ? baseMarket.yesProbability
+        : cachedSnapshot?.yesProbability ?? null,
+    noProbability:
+      hasLiveQuote
+        ? baseMarket.noProbability
+        : cachedSnapshot?.noProbability ?? null,
     volumeUsdc: baseMarket.volumeUsdc || fallbackVolume || 0,
     imageUrl: baseMarket.imageUrl || fallback.image || null,
   };
-  await recordMarketSnapshots([resolvedMarket]);
+  if (market && hasLiveQuote && market.phase !== "resolved") {
+    await recordMarketSnapshots([market]);
+  }
   const insight = await getMarketInsight(resolvedMarket);
   const quoteAvailable =
     resolvedMarket.yesProbability !== null && resolvedMarket.noProbability !== null;
+  const cachedObservedAt =
+    quoteState === "cached" && cachedSnapshot
+      ? new Date(cachedSnapshot.capturedAt).toLocaleTimeString("en-GB", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
 
   return (
     <main className="min-h-screen bg-[#07110d] text-white">
@@ -131,7 +162,22 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
           </div>
 
           <aside className="rounded-[28px] border border-white/10 bg-[#0b1612] p-5 shadow-2xl shadow-black/25 lg:sticky lg:top-6 lg:self-start">
-            <div className="text-xs uppercase tracking-[0.18em] text-white/30">Current market</div>
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-xs uppercase tracking-[0.18em] text-white/30">Current market</div>
+              <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+                quoteState === "live"
+                  ? "bg-emerald-300/10 text-emerald-200"
+                  : quoteState === "cached"
+                    ? "bg-amber-300/10 text-amber-200"
+                    : quoteState === "resolved"
+                      ? "bg-white/10 text-white/55"
+                      : "bg-rose-300/10 text-rose-200"
+              }`}>
+                {quoteState === "cached" && cachedObservedAt
+                  ? `Cached ${cachedObservedAt}`
+                  : quoteState}
+              </span>
+            </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.08] p-4">
                 <div className="text-xs text-white/35">YES</div>
@@ -142,9 +188,14 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 <div className="mt-1 text-4xl font-semibold text-rose-200">{pct(resolvedMarket.noProbability)}</div>
               </div>
             </div>
+            {quoteState === "cached" && (
+              <div className="mt-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] px-3 py-2.5 text-xs leading-5 text-amber-100/60">
+                Live Panta RPC quote is unavailable. Showing the last successful observation captured at {cachedObservedAt}.
+              </div>
+            )}
             {!quoteAvailable && (
               <div className="mt-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] px-3 py-2.5 text-xs leading-5 text-amber-100/60">
-                Live quote is temporarily unavailable from Panta RPC. Market metadata remains live.
+                No usable live or recent cached quote is available. Market metadata remains live.
               </div>
             )}
             <div className="mt-5 border-t border-white/10 pt-5">
