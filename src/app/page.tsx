@@ -1,7 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getMarketSnapshot } from "@/lib/panta";
-import { getPersistentTopMovers, getSignalCoverage } from "@/lib/history";
+import {
+  getPersistentTopMovers,
+  getRecentlyObservedMarkets,
+  getSignalCoverage,
+} from "@/lib/history";
 import WalletPositionsLookup from "@/components/WalletPositionsLookup";
 import MarketQuote from "@/components/MarketQuote";
 import MarketActivitySignal from "@/components/MarketActivitySignal";
@@ -10,15 +14,8 @@ type PageProps = {
   searchParams: Promise<{
     q?: string;
     category?: string;
-    status?: string;
   }>;
 };
-
-function pct(value: number | null) {
-  if (value === null) return "—";
-  if (value === 0 || value === 1) return `${value * 100}%`;
-  return `${(value * 100).toFixed(1)}%`;
-}
 
 function money(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -59,36 +56,21 @@ export default async function Home({ searchParams }: PageProps) {
   const snapshot = await getMarketSnapshot({
     query: params.q,
     category: params.category,
-    status: params.status,
     limit: 20,
   });
-  const [topMovers, signalCoverage] = await Promise.all([
+  const [topMovers, signalCoverage, observedMarkets] = await Promise.all([
     getPersistentTopMovers(),
     getSignalCoverage(),
+    getRecentlyObservedMarkets(),
   ]);
   const titledMarkets = snapshot.markets.filter(
     (market) => !market.title.startsWith("Market "),
   );
-  const tradingMarkets = titledMarkets
-    .filter((market) => market.phase !== "resolved" && market.volumeUsdc > 0)
-    .sort((a, b) => b.volumeUsdc - a.volumeUsdc);
-  const initialMarkets = titledMarkets.filter(
-    (market) => market.phase !== "resolved" && market.volumeUsdc === 0,
-  );
-  const resolvedMarkets = titledMarkets.filter((market) => market.phase === "resolved");
   const signalHero = topMovers[0] ?? null;
   const actionableMarket =
-    titledMarkets.find((market) => market.phase === "primary") ?? null;
-  const liveMarkets = tradingMarkets
-    .slice(0, 5);
-  const moreMarkets = snapshot.markets
-    .filter(
-      (market) =>
-        !liveMarkets.some((item) => item.id === market.id) &&
-        !initialMarkets.some((item) => item.id === market.id) &&
-        !resolvedMarkets.some((item) => item.id === market.id),
-    )
-    .slice(0, 6);
+    observedMarkets.find((market) => market.phase === "primary") ??
+    titledMarkets.find((market) => market.phase === "primary") ??
+    null;
 
   return (
     <main className="min-h-screen bg-[#090d10] text-white">
@@ -132,9 +114,9 @@ export default async function Home({ searchParams }: PageProps) {
           </div>
           <div className="flex gap-2">
             {[
-              ["Markets", snapshot.markets.length],
-              ["Trading", tradingMarkets.length],
-              ["Initial", initialMarkets.length],
+              ["Catalog", titledMarkets.length],
+              ["Observed", signalCoverage.marketsObserved],
+              ["Signals", topMovers.length],
             ].map(([label, value]) => (
               <div key={label} className="min-w-[92px] rounded-xl border border-[#20282e] bg-[#0f1418] px-3 py-2.5">
                 <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">{label}</div>
@@ -149,7 +131,7 @@ export default async function Home({ searchParams }: PageProps) {
         )}
 
         <section className="rounded-2xl border border-[#20282e] bg-[#0f1418] p-3">
-          <form className="grid gap-3 md:grid-cols-[1fr_180px_160px_auto]" action="/">
+          <form className="grid gap-3 md:grid-cols-[1fr_200px_auto]" action="/">
             <input
               name="q"
               defaultValue={params.q || ""}
@@ -161,12 +143,6 @@ export default async function Home({ searchParams }: PageProps) {
               {snapshot.categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
               ))}
-            </select>
-            <select name="status" defaultValue={params.status || ""} className="rounded-xl border border-[#273139] bg-[#0b0f12] px-4 py-3 text-sm">
-              <option value="">All phases</option>
-              <option value="primary">Primary</option>
-              <option value="secondary">Secondary</option>
-              <option value="resolved">Resolved</option>
             </select>
             <button className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#090d10] transition hover:bg-white/90">Search</button>
           </form>
@@ -251,7 +227,7 @@ export default async function Home({ searchParams }: PageProps) {
               </div>
             )}
 
-            {tradingMarkets.length > 0 && (
+            {observedMarkets.length > 0 && (
               <div className="mt-6 border-t border-[#20282e] pt-5">
                 <div className="flex items-end justify-between gap-4">
                   <div>
@@ -263,7 +239,7 @@ export default async function Home({ searchParams }: PageProps) {
                   <span className="text-[11px] text-white/25">shares, not USD</span>
                 </div>
                 <div className="mt-4 grid gap-3">
-                  {tradingMarkets.slice(0, 3).map((market) => (
+                  {observedMarkets.slice(0, 3).map((market) => (
                     <MarketActivitySignal
                       key={market.id}
                       marketId={market.id}
@@ -304,88 +280,49 @@ export default async function Home({ searchParams }: PageProps) {
           </div>
         </section>
 
-        {liveMarkets.length > 0 && (
-          <section id="live" className="mt-8">
-            <div className="flex items-end justify-between gap-4">
+        {titledMarkets.length > 0 && (
+          <section id="live" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Volume</div>
-                <h2 className="mt-2 text-2xl font-semibold">Trading now</h2>
-                <p className="mt-1 text-sm text-white/35">Only markets with non-zero Panta volume.</p>
+                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Market Explorer</div>
+                <h2 className="mt-2 text-2xl font-semibold">Panta markets</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
+                  The catalog supplies identity and discovery. Each card hydrates its actual phase, price and volume from Panta market detail so stale catalog metadata is never presented as trading state.
+                </p>
               </div>
-              <span className="text-sm text-white/30">{tradingMarkets.length} active</span>
+              <span className="text-xs text-white/25">{titledMarkets.length} catalog markets</span>
             </div>
+
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {liveMarkets.map((market) => (
-                <Link key={market.id} href={marketDetailHref(market)} className="group overflow-hidden rounded-2xl border border-[#20282e] bg-[#0f1418] transition hover:-translate-y-0.5 hover:border-[#303b43] hover:bg-[#12181d]">
-                  <div className="relative aspect-[16/8.5] overflow-hidden bg-black/25">
+              {titledMarkets.map((market) => (
+                <Link
+                  key={market.id}
+                  href={marketDetailHref(market)}
+                  className="group overflow-hidden rounded-2xl border border-[#20282e] bg-[#0b0f12] transition hover:-translate-y-0.5 hover:border-[#303b43] hover:bg-[#12181d]"
+                >
+                  <div className="relative aspect-[16/7.5] overflow-hidden bg-[#151b20]">
                     {market.imageUrl ? (
-                      <Image src={market.imageUrl} alt="" fill className="object-cover transition duration-300 group-hover:scale-[1.02]" sizes="(max-width: 768px) 100vw, 33vw" />
+                      <Image
+                        src={market.imageUrl}
+                        alt=""
+                        fill
+                        className="object-cover transition duration-300 group-hover:scale-[1.02]"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
                     ) : (
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(52,211,153,.16),transparent_45%)]" />
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(148,163,184,.14),transparent_48%)]" />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f1418] via-transparent to-transparent" />
-                    <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/70 backdrop-blur">{market.category}</span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f12] via-transparent to-transparent" />
+                    <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/70 backdrop-blur">
+                      {market.category}
+                    </span>
                   </div>
                   <div className="p-5">
-                    <h3 className="min-h-[3.5rem] text-lg font-medium leading-7">{market.title}</h3>
-                    <div className="mt-5 grid grid-cols-2 gap-2">
-                      <div className="col-span-2"><MarketQuote marketId={market.id} /></div>
-                    </div>
-                    <div className="mt-4 flex justify-between text-xs text-white/30"><span>{market.phase}</span><span>{money(market.volumeUsdc)} vol.</span></div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {initialMarkets.length > 0 && (
-          <section id="initial" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0f1418] p-6">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-amber-300/65">Initial</div>
-                <h2 className="mt-2 text-2xl font-semibold">Not traded yet</h2>
-                <p className="mt-1 text-sm text-white/35">50/50 is the starting price here. These markets currently have $0 Panta volume.</p>
-              </div>
-              <span className="text-sm text-white/30">{initialMarkets.length} markets</span>
-            </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {initialMarkets.slice(0, 6).map((market) => (
-                <Link key={market.id} href={marketDetailHref(market)} className="flex items-center gap-4 rounded-2xl border border-[#20282e] bg-[#0b0f12] p-3 transition hover:border-[#303b43]">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-[#151b20]">
-                    {market.imageUrl && <Image src={market.imageUrl} alt="" fill className="object-cover" sizes="64px" />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="line-clamp-2 text-sm font-medium leading-5">{market.title}</div>
-                    <div className="mt-2"><MarketQuote marketId={market.id} compact /></div>
-                  </div>
-                  <span className="shrink-0 text-[11px] text-white/25">$0 vol.</span>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {moreMarkets.length > 0 && (
-          <section className="mt-9 rounded-3xl border border-white/10 bg-white/[0.025] p-6">
-            <div className="flex items-end justify-between">
-              <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Explore</div>
-                <h2 className="mt-2 text-2xl font-semibold">More Panta markets</h2>
-              </div>
-              <span className="text-xs text-white/25">Quote availability depends on Panta RPC</span>
-            </div>
-            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {moreMarkets.map((market) => (
-                <Link key={market.id} href={marketDetailHref(market)} className="flex gap-4 rounded-2xl border border-white/10 bg-black/15 p-3 transition hover:border-white/20">
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-white/[0.04]">
-                    {market.imageUrl && <Image src={market.imageUrl} alt="" fill className="object-cover" sizes="80px" />}
-                  </div>
-                  <div className="min-w-0 py-1">
-                    <div className="text-xs text-white/30">{market.category} · {market.phase}</div>
-                    <div className="mt-1 line-clamp-2 text-sm font-medium leading-5">{market.title}</div>
-                    <div className="mt-2 text-xs text-white/30">
-                      {market.yesProbability === null ? "Live quote unavailable" : `YES ${pct(market.yesProbability)} · ${money(market.volumeUsdc)} vol.`}
+                    <h3 className="min-h-[3.5rem] text-base font-medium leading-6 text-white/85">
+                      {market.title}
+                    </h3>
+                    <div className="mt-4">
+                      <MarketQuote marketId={market.id} />
                     </div>
                   </div>
                 </Link>

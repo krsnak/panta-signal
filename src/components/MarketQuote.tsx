@@ -11,6 +11,8 @@ type ApiResponse = {
   market?: {
     yesProbability: number | null;
     noProbability: number | null;
+    phase: string;
+    volumeUsdc: number;
   };
   quoteState?: "live" | "cached" | "resolved" | "unavailable";
   ageSeconds?: number | null;
@@ -26,6 +28,8 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
   const ref = useRef<HTMLDivElement | null>(null);
   const [visible, setVisible] = useState(false);
   const [quote, setQuote] = useState<{ yes: number | null; no: number | null } | null>(null);
+  const [phase, setPhase] = useState<string | null>(null);
+  const [volumeUsdc, setVolumeUsdc] = useState<number | null>(null);
   const [quoteState, setQuoteState] = useState<ApiResponse["quoteState"] | null>(null);
   const [ageSeconds, setAgeSeconds] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
@@ -59,6 +63,8 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
           yes: body.market?.yesProbability ?? null,
           no: body.market?.noProbability ?? null,
         });
+        setPhase(body.market?.phase ?? null);
+        setVolumeUsdc(body.market?.volumeUsdc ?? null);
         setQuoteState(body.quoteState ?? "unavailable");
         setAgeSeconds(body.ageSeconds ?? null);
       })
@@ -86,6 +92,7 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
         <span className="text-emerald-300/75">YES {quote ? pct(quote.yes) : "…"}</span>
         <span className="text-rose-300/75">NO {quote ? pct(quote.no) : "…"}</span>
         {stateLabel && <span className="text-white/25">{stateLabel}</span>}
+        {phase && <span className="text-white/25">{phase}</span>}
       </div>
     );
   }
@@ -117,6 +124,14 @@ export default function MarketQuote({ marketId, compact = false }: MarketQuotePr
       </div>
       <div className="mt-2 text-[11px] text-white/25">
         {stateLabel}
+        {phase ? ` · ${phase}` : ""}
+        {volumeUsdc !== null
+          ? ` · ${new Intl.NumberFormat("en-US", {
+              style: "currency",
+              currency: "USD",
+              maximumFractionDigits: 2,
+            }).format(volumeUsdc)} vol.`
+          : ""}
       </div>
     </div>
   );

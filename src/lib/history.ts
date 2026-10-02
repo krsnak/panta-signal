@@ -426,6 +426,44 @@ export async function getSignalCoverage(hours = 24): Promise<SignalCoverage> {
   };
 }
 
+export async function getRecentlyObservedMarkets(
+  hours = 24,
+  limit = 3,
+): Promise<PantaMarket[]> {
+  const cutoff = Date.now() - Math.max(hours, 1) * 60 * 60 * 1000;
+  const historyPoints = hasDatabase()
+    ? await readDatabaseHistory(cutoff)
+    : await (async () => {
+        await writeQueue;
+        const history = await readHistory();
+        return history.points.filter((point) => point.capturedAt >= cutoff);
+      })();
+
+  const latestByMarket = new Map<string, MarketHistoryPoint>();
+  for (const point of historyPoints) {
+    const current = latestByMarket.get(point.marketId);
+    if (!current || point.capturedAt > current.capturedAt) {
+      latestByMarket.set(point.marketId, point);
+    }
+  }
+
+  return [...latestByMarket.values()]
+    .sort((a, b) => b.capturedAt - a.capturedAt)
+    .slice(0, Math.max(1, limit))
+    .map((point) => ({
+      id: point.marketId,
+      title: point.title,
+      description: point.description,
+      category: point.category,
+      phase: point.phase,
+      status: point.status,
+      yesProbability: point.yesProbability,
+      noProbability: point.noProbability,
+      volumeUsdc: point.volumeUsdc,
+      imageUrl: point.imageUrl,
+    }));
+}
+
 export async function getMarketInsight(market: PantaMarket, hours = 24) {
   const points = await getMarketHistory(market.id, hours);
   if (points.length < 2) {
