@@ -194,7 +194,7 @@ Perform the following in short, documented tasks:
 | Task | State | Goal |
 | --- | --- | --- |
 | F1v2.1 Verify all official historical-data surfaces | DONE | Current official playground/API surface exposes current market prices and historical trade activity, but no documented historical spot-price/state series or trade-row price field. |
-| F1v2.2 Inspect real trade transactions on Solana | NEXT | Use existing public trade signatures read-only; inspect instructions, logs, account changes and touched market accounts. |
+| F1v2.2 Inspect real trade transactions on Solana | IN PROGRESS | Public transaction source is being established first; local key is sandbox-only, while the public Panta frontend confirms a live price-history surface that is not documented in the playground. |
 | F1v2.3 Test historical price reconstruction | TODO | Determine whether an exact YES/NO probability can be derived at each trade timestamp. |
 | F1v2.4 Validate against known observations | TODO | Compare reconstructed values with our durable snapshots/current Panta detail; quantify mismatch. |
 | F1v2.5 Decide source hierarchy | TODO | Decide whether reconstruction is exact enough to supplement/replace snapshot-only movement history. |
@@ -232,6 +232,24 @@ Research conclusion:
 - A realistic reconstruction path nevertheless exists through Solana history because every public trade row carries a transaction signature and Panta's own build flow exposes the underlying Solana instruction/program/account structure.
 - F1v2.2 will therefore take several real public trade signatures from the live tape and inspect the corresponding mainnet transactions read-only: outer/inner program IDs, instruction data, logs, writable accounts, token balance changes, and any pre/post market-account state available from RPC. The goal is to identify whether an exact market state or deterministic price-bearing state is recoverable at each trade boundary.
 - No production Signal Feed code changes are justified yet. The current source hierarchy remains durable snapshots for historical probability movement plus Panta trade tape for immediate historical activity.
+
+### F1v2.2 progress — 2026-10-02
+
+First read-only transaction-source pass:
+
+- The local `.env.local` Panta configuration resolves to the sandbox/test catalog. Its visible market is `TestMarket1111111111111111111111111111111` and it has no usable real trade rows, so it must not be used as evidence for mainnet reconstruction.
+- The connected Vercel integration could identify the production deployment but is not authorized to read that project's protected deployment aliases/data, so it cannot currently be used to pull the production Signal API.
+- The public `panta.market` dashboard bundle is directly readable and contains a YES/NO **price history chart** with timestamped points. This is important because the official playground did not document any historical price series. The frontend therefore appears to consume an additional history-capable surface that still needs to be identified precisely.
+- Panta's current public How It Works documentation clarifies protocol semantics: primary-market YES and NO prices sum to 1 and move with demand; secondary trading is a CLOB where YES/NO prices are independent. Any reconstruction method must therefore be phase-aware and cannot assume one universal AMM formula.
+
+Next exact F1v2.2 action:
+
+1. identify the endpoint/data source feeding the public Panta price-history chart or obtain the same market's live trade signatures from the production trade tape,
+2. take several real signatures from one primary market and, if available, one secondary market,
+3. inspect each Solana transaction read-only for program IDs, outer/inner instructions, logs, writable accounts, token balance changes, and recoverable pre/post market state,
+4. record whether price is directly emitted, deterministically derivable from state, or absent.
+
+F1v2.2 remains **IN PROGRESS** until real mainnet signatures have been inspected. No production code changes have been made.
 
 Implementation proceeds only if the research establishes:
 
