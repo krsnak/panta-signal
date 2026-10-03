@@ -13,6 +13,7 @@ import {
 } from "@/lib/panta";
 import {
   buildMarketSignal,
+  isMeaningfulSignal,
   rankMarketSignals,
   type MarketSignal,
   type SignalQuoteState,
@@ -121,7 +122,7 @@ export async function getCanonicalSignalFeed(options?: {
     .filter((signal) => signal.market.id !== options?.excludeMarketId);
 
   return {
-    signals: rankMarketSignals(signals).slice(0, limit),
+    signals: rankMarketSignals(signals.filter(isMeaningfulSignal)).slice(0, limit),
     observedCount: observed.length,
     failedCount,
   };

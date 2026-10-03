@@ -4,6 +4,7 @@ import type { PantaMarket } from "./panta-core";
 import {
   buildMarketSignal,
   describeMarketSignal,
+  isMeaningfulSignal,
   rankMarketSignals,
 } from "./signal-model";
 import type { MarketActivitySummary } from "./trade-signal";
@@ -89,6 +90,7 @@ describe("canonical market signal", () => {
     expect(signal.movement.changePoints).toBe(0);
     expect(signal.activity24h?.yesShares24h).toBe(21.61);
     expect(signal.activityState).toBe("live");
+    expect(isMeaningfulSignal(signal)).toBe(true);
   });
 
   it("marks a fully observed quiet market as flat", () => {
@@ -103,6 +105,7 @@ describe("canonical market signal", () => {
 
     expect(signal.kind).toBe("flat");
     expect(signal.quoteState).toBe("cached");
+    expect(isMeaningfulSignal(signal)).toBe(false);
   });
 
   it("uses collecting state when history is insufficient", () => {

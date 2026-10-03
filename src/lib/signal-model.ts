@@ -171,6 +171,16 @@ export function rankMarketSignals(signals: MarketSignal[]) {
   });
 }
 
+export function isMeaningfulSignal(signal: MarketSignal) {
+  if (signal.kind === "movement") {
+    return Math.abs(signal.movement.changePoints ?? 0) >= 0.5;
+  }
+  if (signal.kind === "activity") {
+    return (signal.activity24h?.tradeCount24h ?? 0) > 0;
+  }
+  return false;
+}
+
 export function formatSignalWindow(seconds: number | null) {
   if (seconds === null) return "collecting";
   if (seconds < 3600) return `${Math.max(1, Math.round(seconds / 60))}m`;

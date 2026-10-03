@@ -2,13 +2,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { getCurrentPublicRegistryMarkets, getMarketSnapshot } from "@/lib/panta";
 import {
-  getPersistentTopMovers,
   getRecentlyObservedMarkets,
   getSignalCoverage,
 } from "@/lib/history";
 import MarketQuote from "@/components/MarketQuote";
 import PrimarySignalCard from "@/components/PrimarySignalCard";
 import WalletConnectButton from "@/components/WalletConnectButton";
+import { getCanonicalSignalFeed } from "@/lib/signal-service";
 
 type PageProps = {
   searchParams: Promise<{
@@ -60,11 +60,15 @@ export default async function Home({ searchParams }: PageProps) {
     category: params.category,
     limit: 20,
   });
-  const [topMovers, signalCoverage, observedMarkets, publicRegistryMarkets] = await Promise.all([
-    getPersistentTopMovers(),
+  const [signalCoverage, observedMarkets, publicRegistryMarkets, canonicalFeed] = await Promise.all([
     getSignalCoverage(),
     getRecentlyObservedMarkets(),
     getCurrentPublicRegistryMarkets(20).catch(() => []),
+    getCanonicalSignalFeed({ hours: 24, limit: 3 }).catch(() => ({
+      signals: [],
+      observedCount: 0,
+      failedCount: 0,
+    })),
   ]);
   const discoveryMarkets =
     publicRegistryMarkets.length > 0 ? publicRegistryMarkets : snapshot.markets;
@@ -92,11 +96,7 @@ export default async function Home({ searchParams }: PageProps) {
         : judgeFacingMarkets.slice(0, 6)
       : titledMarkets;
   const liveMarkets = visibleMarkets;
-  const primarySignalMarket =
-    observedMarkets[0] ??
-    topMovers[0]?.market ??
-    visibleMarkets[0] ??
-    null;
+  const primarySignalMarket = canonicalFeed.signals[0]?.market ?? null;
 
   return (
     <main className="min-h-screen bg-[#090d10] text-white">
@@ -185,9 +185,9 @@ export default async function Home({ searchParams }: PageProps) {
           ) : (
             <section id="featured" className="rounded-[28px] border border-[#263038] bg-[#0f1418] p-8">
               <div className="text-xs uppercase tracking-[0.18em] text-white/30">Signal Feed</div>
-              <h2 className="mt-3 text-3xl font-semibold">Waiting for the first observable Panta market</h2>
+              <h2 className="mt-3 text-3xl font-semibold">No meaningful signal right now</h2>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-white/45">
-                Signal Feed requires a real Panta market detail or a durable stored observation. No sample mover is substituted.
+                Markets stay in the catalog, but this featured slot is reserved for evidence-backed movement or real trading activity. Panta Signal does not promote a flat or inactive market just to fill the space.
               </p>
             </section>
           )}
