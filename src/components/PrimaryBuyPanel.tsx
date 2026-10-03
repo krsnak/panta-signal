@@ -9,6 +9,7 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { useSolanaWallet } from "@/components/SolanaWalletProvider";
+import WalletConnectButton from "@/components/WalletConnectButton";
 
 type Quote = {
   quoteId: string;
@@ -68,7 +69,7 @@ function sleep(ms: number) {
 }
 
 export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: string; enabled: boolean }) {
-  const { wallet, provider, connect, connecting, error: walletError } = useSolanaWallet();
+  const { wallet, provider, error: walletError } = useSolanaWallet();
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("1.00");
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -76,21 +77,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
   const [receipt, setReceipt] = useState<ExecutionReceipt | null>(null);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
-
-  async function connectWallet() {
-    try {
-      setBusy(true);
-      await connect();
-      setQuote(null);
-      setOrder(null);
-      setReceipt(null);
-      setStatus("Wallet connected.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Wallet connection failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
+  const [flowWallet, setFlowWallet] = useState("");
 
   async function requestQuote() {
     if (!wallet) return setStatus("Connect a wallet first.");
@@ -109,6 +96,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         amountUsdc: amount,
       });
       setQuote(result);
+      setFlowWallet(wallet);
       setStatus("Quote ready. Review it before building the transaction.");
     } catch (error) {
       setQuote(null);
@@ -120,6 +108,9 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
 
   async function buildOrder() {
     if (!quote || !wallet) return;
+    if (flowWallet !== wallet) {
+      return setStatus("Wallet changed. Request a fresh quote for the currently connected Phantom account.");
+    }
     try {
       setBusy(true);
       setReceipt(null);
@@ -141,6 +132,16 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
   async function signAndSubmit() {
     if (!order || !wallet) return;
     if (!provider) return setStatus("Solana wallet is no longer available.");
+    if (provider.isConnected === false) {
+      return setStatus("Wallet is disconnected. Reconnect Phantom before signing.");
+    }
+    const activeWallet = provider.publicKey?.toString() ?? "";
+    if (!activeWallet || activeWallet !== wallet) {
+      return setStatus("Connected wallet changed. Reconnect and request a fresh quote before signing.");
+    }
+    if (flowWallet !== wallet) {
+      return setStatus("This transaction was built for a different wallet. Request a fresh quote.");
+    }
 
     try {
       setBusy(true);
@@ -233,13 +234,17 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
   }
 
   const visibleStatus = status || walletError || "";
-  const flowStep = receipt
-    ? receipt.status === "confirmed"
+  const flowMatchesWallet = !flowWallet || flowWallet === wallet;
+  const visibleQuote = flowMatchesWallet ? quote : null;
+  const visibleOrder = flowMatchesWallet ? order : null;
+  const visibleReceipt = flowMatchesWallet ? receipt : null;
+  const flowStep = visibleReceipt
+    ? visibleReceipt.status === "confirmed"
       ? 5
       : 4
-    : order
+    : visibleOrder
       ? 3
-      : quote
+      : visibleQuote
         ? 2
         : wallet
           ? 1
@@ -253,14 +258,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         <p className="text-sm leading-6 text-white/40">
           Panta Signal only enables its current YES/NO purchase flow on supported primary markets. Secondary-market order-book execution is not simulated.
         </p>
-        <button
-          type="button"
-          disabled={connecting}
-          onClick={connectWallet}
-          className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-2.5 text-sm font-medium text-emerald-200 disabled:opacity-50"
-        >
-          {wallet ? `Phantom ${wallet.slice(0, 4)}…${wallet.slice(-4)} connected` : connecting ? "Connecting…" : "Connect Phantom"}
-        </button>
+        <WalletConnectButton />
       </div>
     );
   }
@@ -290,14 +288,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
             Primary-market purchases use USDC on Solana. Your wallet remains under your control and must approve every transaction before anything is broadcast.
           </p>
         </div>
-        <button
-          type="button"
-          disabled={busy || connecting}
-          onClick={connectWallet}
-          className="rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-2.5 text-sm font-medium text-emerald-200 disabled:opacity-50"
-        >
-          {wallet ? `Phantom ${wallet.slice(0, 4)}…${wallet.slice(-4)}` : connecting ? "Connecting…" : "Connect Phantom"}
-        </button>
+        <WalletConnectButton />
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[auto_1fr_auto]">
@@ -306,7 +297,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
             <button
               key={value}
               type="button"
-              onClick={() => { setSide(value); setQuote(null); setOrder(null); setReceipt(null); }}
+              onClick={() => { setSide(value); setQuote(null); setOrder(null); setReceipt(null); setFlowWallet(""); }}
               className={`rounded-lg px-4 py-2 text-sm font-medium ${side === value ? (value === "yes" ? "bg-emerald-300 text-[#07110d]" : "bg-rose-300 text-[#07110d]") : "text-white/45"}`}
             >
               {value.toUpperCase()}
@@ -315,7 +306,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         </div>
         <input
           value={amount}
-          onChange={(event) => { setAmount(event.target.value); setQuote(null); setOrder(null); setReceipt(null); }}
+          onChange={(event) => { setAmount(event.target.value); setQuote(null); setOrder(null); setReceipt(null); setFlowWallet(""); }}
           inputMode="decimal"
           aria-label="USDC amount"
           className="rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm outline-none"
@@ -335,16 +326,16 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         Trading involves risk and you can lose the USDC used to acquire a position. Prices are market-driven and are not financial advice.
       </div>
 
-      {quote && (
+      {visibleQuote && (
         <div className="rounded-2xl border border-white/10 bg-black/15 p-5">
           <div className="grid gap-4 sm:grid-cols-4">
-            <div><div className="text-xs text-white/35">Deposit</div><div className="mt-1 font-medium">{quote.amountUsdc} USDC</div></div>
-            <div><div className="text-xs text-white/35">Est. shares</div><div className="mt-1 font-medium">{quote.shares}</div></div>
-            <div><div className="text-xs text-white/35">Avg. price</div><div className="mt-1 font-medium">{quote.avgPrice ?? "—"}</div></div>
-            <div><div className="text-xs text-white/35">Protocol fee</div><div className="mt-1 font-medium">{quote.feeUsdc} USDC</div></div>
+            <div><div className="text-xs text-white/35">Deposit</div><div className="mt-1 font-medium">{visibleQuote.amountUsdc} USDC</div></div>
+            <div><div className="text-xs text-white/35">Est. shares</div><div className="mt-1 font-medium">{visibleQuote.shares}</div></div>
+            <div><div className="text-xs text-white/35">Avg. price</div><div className="mt-1 font-medium">{visibleQuote.avgPrice ?? "—"}</div></div>
+            <div><div className="text-xs text-white/35">Protocol fee</div><div className="mt-1 font-medium">{visibleQuote.feeUsdc} USDC</div></div>
           </div>
-          {quote.disclaimer && <p className="mt-4 text-xs leading-5 text-amber-200/70">{quote.disclaimer}</p>}
-          {!order && (
+          {visibleQuote.disclaimer && <p className="mt-4 text-xs leading-5 text-amber-200/70">{visibleQuote.disclaimer}</p>}
+          {!visibleOrder && (
             <button
               type="button"
               disabled={busy}
@@ -357,15 +348,15 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         </div>
       )}
 
-      {order && (
+      {visibleOrder && (
         <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.05] p-5">
           <p className="text-sm leading-6 text-white/60">
-            {order.instructions.length > 0
+            {visibleOrder.instructions.length > 0
               ? "Panta returned unsigned Solana instructions. Only your wallet can approve and sign them. Review the wallet prompt before broadcasting."
               : "Panta test mode returned a sandbox build preview with no on-chain instructions. Nothing can be signed or broadcast from this fixture."}
           </p>
-          {order.disclaimer && <p className="mt-3 text-xs leading-5 text-amber-200/70">{order.disclaimer}</p>}
-          {order.instructions.length > 0 && (
+          {visibleOrder.disclaimer && <p className="mt-3 text-xs leading-5 text-amber-200/70">{visibleOrder.disclaimer}</p>}
+          {visibleOrder.instructions.length > 0 && (
             <button
               type="button"
               disabled={busy}
@@ -378,21 +369,21 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         </div>
       )}
 
-      {receipt && (
+      {visibleReceipt && (
         <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-xs uppercase tracking-[0.16em] text-white/30">Solana receipt</div>
-              <div className="mt-2 text-sm font-medium text-white/75">Panta status: {receipt.status}</div>
-              {receipt.status === "confirmed" && (
-                <div className={`mt-1 text-xs font-medium ${receipt.indexed ? "text-emerald-200" : "text-amber-200"}`}>
-                  {receipt.indexed ? "Visible in Panta Signal trade evidence" : "Waiting for public trade-feed indexing"}
+              <div className="mt-2 text-sm font-medium text-white/75">Panta status: {visibleReceipt.status}</div>
+              {visibleReceipt.status === "confirmed" && (
+                <div className={`mt-1 text-xs font-medium ${visibleReceipt.indexed ? "text-emerald-200" : "text-amber-200"}`}>
+                  {visibleReceipt.indexed ? "Visible in Panta Signal trade evidence" : "Waiting for public trade-feed indexing"}
                 </div>
               )}
-              <div className="mt-1 max-w-xl truncate font-mono text-xs text-white/35">{receipt.signature}</div>
+              <div className="mt-1 max-w-xl truncate font-mono text-xs text-white/35">{visibleReceipt.signature}</div>
             </div>
             <a
-              href={explorerUrl(receipt.signature)}
+              href={explorerUrl(visibleReceipt.signature)}
               target="_blank"
               rel="noreferrer"
               className="inline-flex rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/75 transition hover:border-white/25 hover:text-white"

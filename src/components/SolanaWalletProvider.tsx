@@ -13,6 +13,7 @@ import type { VersionedTransaction } from "@solana/web3.js";
 
 export type SolanaProvider = {
   isPhantom?: boolean;
+  isConnected?: boolean;
   publicKey?: { toString(): string } | null;
   connect(options?: { onlyIfTrusted?: boolean }): Promise<{ publicKey: { toString(): string } }>;
   disconnect?(): Promise<void>;
@@ -26,6 +27,7 @@ type WalletContextValue = {
   provider: SolanaProvider | null;
   available: boolean;
   connecting: boolean;
+  disconnecting: boolean;
   error: string | null;
   connect(): Promise<string>;
   disconnect(): Promise<void>;
@@ -39,20 +41,29 @@ function detectProvider() {
     solana?: SolanaProvider;
     phantom?: { solana?: SolanaProvider };
   };
-  return browser.phantom?.solana ?? browser.solana ?? null;
+  const phantom = browser.phantom?.solana;
+  if (phantom?.isPhantom) return phantom;
+  const legacy = browser.solana;
+  if (legacy?.isPhantom) return legacy;
+  return null;
 }
 
 export default function SolanaWalletProvider({ children }: { children: ReactNode }) {
   const [provider, setProvider] = useState<SolanaProvider | null>(null);
   const [wallet, setWallet] = useState("");
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const detected = detectProvider();
     const initialSync = window.setTimeout(() => {
       setProvider(detected);
-      if (detected?.publicKey) setWallet(detected.publicKey.toString());
+      if (detected?.isConnected && detected.publicKey) {
+        setWallet(detected.publicKey.toString());
+      } else {
+        setWallet("");
+      }
     }, 0);
 
     const handleConnect = (value?: unknown) => {
@@ -61,7 +72,10 @@ export default function SolanaWalletProvider({ children }: { children: ReactNode
       setWallet(next);
       setError(null);
     };
-    const handleDisconnect = () => setWallet("");
+    const handleDisconnect = () => {
+      setWallet("");
+      setError(null);
+    };
     const handleAccountChanged = (value?: unknown) => {
       const publicKey = value as { toString?(): string } | null | undefined;
       setWallet(publicKey?.toString?.() ?? "");
@@ -106,10 +120,12 @@ export default function SolanaWalletProvider({ children }: { children: ReactNode
 
   const disconnect = useCallback(async () => {
     try {
+      setDisconnecting(true);
       await provider?.disconnect?.();
     } finally {
       setWallet("");
       setError(null);
+      setDisconnecting(false);
     }
   }, [provider]);
 
@@ -119,11 +135,12 @@ export default function SolanaWalletProvider({ children }: { children: ReactNode
       provider,
       available: Boolean(provider),
       connecting,
+      disconnecting,
       error,
       connect,
       disconnect,
     }),
-    [wallet, provider, connecting, error, connect, disconnect],
+    [wallet, provider, connecting, disconnecting, error, connect, disconnect],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

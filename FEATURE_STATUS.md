@@ -363,6 +363,14 @@ Next: S3 submission packaging and judge-flow polish.
 - After a confirmed Panta order, Panta Signal polls its public activity endpoint for the exact Solana signature.
 - If the signature appears, the UI reports that the trade is visible in Panta Signal evidence; if indexing lags, the Solana receipt remains available for independent verification.
 - No transaction was signed or broadcast while implementing this flow.
+- Phantom session handling was hardened after mobile testing:
+  - only providers explicitly identifying as Phantom are accepted,
+  - an injected generic `window.solana` wallet is no longer mislabeled as Phantom,
+  - initial UI state requires Phantom `isConnected` plus a public key,
+  - connected state exposes an explicit Disconnect action,
+  - mobile browsers without an injected Phantom provider use Phantom's official `browse` universal-link flow,
+  - wallet/account changes invalidate the active execution flow,
+  - signing checks that the currently connected Phantom public key still matches the wallet for which the quote/build was created.
 
 Production catalog finding — 2026-10-02:
 
