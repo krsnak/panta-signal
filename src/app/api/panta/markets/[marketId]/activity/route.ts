@@ -11,10 +11,20 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     const trades = await getMarketTrades(decodeURIComponent(marketId), 50);
     return NextResponse.json(
-      { activity: summarizeMarketTrades(trades) },
+      {
+        activity: summarizeMarketTrades(trades),
+        trades: trades.slice(0, 20).map((trade) => ({
+          signature: trade.signature,
+          wallet: trade.wallet,
+          isPrimary: trade.isPrimary,
+          yesAmount: trade.yesAmount,
+          noAmount: trade.noAmount,
+          blockTime: trade.blockTime,
+        })),
+      },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=10, stale-while-revalidate=30",
+          "Cache-Control": "no-store",
         },
       },
     );

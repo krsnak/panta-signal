@@ -8,6 +8,7 @@ import {
   formatSignalWindow,
 } from "@/lib/signal-model";
 import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
+import WalletConnectButton from "@/components/WalletConnectButton";
 
 type PageProps = {
   params: Promise<{ marketId: string }>;
@@ -114,9 +115,12 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   return (
     <main className="min-h-screen bg-[#07110d] text-white">
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <Link href="/" className="text-sm font-medium text-emerald-300 hover:text-emerald-200">← Markets</Link>
-          <span className="text-xs uppercase tracking-[0.16em] text-white/25">Powered by Panta</span>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs uppercase tracking-[0.16em] text-white/25 sm:inline">Powered by Panta</span>
+            <WalletConnectButton compact />
+          </div>
         </div>
 
         <section className="mt-6 grid gap-5 lg:grid-cols-[1.35fr_.65fr]">

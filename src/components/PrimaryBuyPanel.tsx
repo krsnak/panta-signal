@@ -41,6 +41,7 @@ type BuiltOrder = {
 type ExecutionReceipt = {
   signature: string;
   status: string;
+  indexed?: boolean;
 };
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -69,7 +70,7 @@ function sleep(ms: number) {
 export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: string; enabled: boolean }) {
   const { wallet, provider, connect, connecting, error: walletError } = useSolanaWallet();
   const [side, setSide] = useState<"yes" | "no">("yes");
-  const [amount, setAmount] = useState("5.00");
+  const [amount, setAmount] = useState("1.00");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [order, setOrder] = useState<BuiltOrder | null>(null);
   const [receipt, setReceipt] = useState<ExecutionReceipt | null>(null);
@@ -188,11 +189,36 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
       }
 
       if (verifiedStatus === "confirmed") {
-        setStatus("Confirmed by Panta. The Solana transaction receipt is available below.");
+        setStatus("Confirmed by Panta. Checking the public Panta trade feed for this exact Solana signature…");
         window.dispatchEvent(
           new CustomEvent("panta:order-confirmed", {
             detail: { wallet, marketId, signature: sent.signature },
           }),
+        );
+        let indexed = false;
+        for (let attempt = 0; attempt < 10; attempt += 1) {
+          try {
+            const response = await fetch(
+              `/api/panta/markets/${encodeURIComponent(marketId)}/activity?signature=${encodeURIComponent(sent.signature)}&t=${Date.now()}`,
+              { cache: "no-store" },
+            );
+            if (response.ok) {
+              const body = await response.json() as {
+                trades?: Array<{ signature?: string }>;
+              };
+              indexed = Boolean(body.trades?.some((trade) => trade.signature === sent.signature));
+              if (indexed) break;
+            }
+          } catch {
+            // Panta trade indexing can lag the transaction confirmation.
+          }
+          await sleep(2000);
+        }
+        setReceipt({ signature: sent.signature, status: verifiedStatus, indexed });
+        setStatus(
+          indexed
+            ? "Confirmed end-to-end: the same Solana signature is now visible in the public Panta trade feed used by Panta Signal."
+            : "Transaction confirmed. Panta trade-feed indexing is still pending; the Solana receipt remains independently verifiable.",
         );
       } else if (verifiedStatus === "failed" || verifiedStatus === "expired") {
         setStatus(`Panta order ended with status: ${verifiedStatus}.`);
@@ -221,8 +247,20 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
 
   if (!enabled) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-black/15 p-5 text-sm text-white/45">
-        Primary buy is available only while the market is in its primary phase.
+      <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/30">Trade on Panta</div>
+        <div className="text-base font-semibold text-white/75">Wallet execution is ready, but this market is not in primary phase.</div>
+        <p className="text-sm leading-6 text-white/40">
+          Panta Signal only enables its current YES/NO purchase flow on supported primary markets. Secondary-market order-book execution is not simulated.
+        </p>
+        <button
+          type="button"
+          disabled={connecting}
+          onClick={connectWallet}
+          className="rounded-xl border border-emerald-300/25 bg-emerald-300/10 px-4 py-2.5 text-sm font-medium text-emerald-200 disabled:opacity-50"
+        >
+          {wallet ? `Phantom ${wallet.slice(0, 4)}…${wallet.slice(-4)} connected` : connecting ? "Connecting…" : "Connect Phantom"}
+        </button>
       </div>
     );
   }
@@ -346,6 +384,11 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
             <div>
               <div className="text-xs uppercase tracking-[0.16em] text-white/30">Solana receipt</div>
               <div className="mt-2 text-sm font-medium text-white/75">Panta status: {receipt.status}</div>
+              {receipt.status === "confirmed" && (
+                <div className={`mt-1 text-xs font-medium ${receipt.indexed ? "text-emerald-200" : "text-amber-200"}`}>
+                  {receipt.indexed ? "Visible in Panta Signal trade evidence" : "Waiting for public trade-feed indexing"}
+                </div>
+              )}
               <div className="mt-1 max-w-xl truncate font-mono text-xs text-white/35">{receipt.signature}</div>
             </div>
             <a

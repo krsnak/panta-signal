@@ -353,6 +353,17 @@ Next: S3 submission packaging and judge-flow polish.
 - Execution copy follows Panta terminology: primary-market purchase, USDC on Solana, non-custodial wallet approval, no betting language.
 - Primary buy UI now includes a visible trading-risk disclosure and makes clear that the wallet must approve every broadcast.
 
+### End-to-end execution demo flow — 2026-10-03
+
+- Homepage and market detail now expose a visible Phantom connect control.
+- Market detail always shows the execution area:
+  - primary markets expose the real YES/NO quote/build/sign/verify flow,
+  - non-primary markets explicitly state that execution is unavailable rather than simulating secondary-market trading.
+- Demo amount defaults to 1.00 USDC but remains editable and subject to Panta quote validation.
+- After a confirmed Panta order, Panta Signal polls its public activity endpoint for the exact Solana signature.
+- If the signature appears, the UI reports that the trade is visible in Panta Signal evidence; if indexing lags, the Solana receipt remains available for independent verification.
+- No transaction was signed or broadcast while implementing this flow.
+
 Production catalog finding — 2026-10-02:
 
 - Current live Panta API returns 7 catalog markets.

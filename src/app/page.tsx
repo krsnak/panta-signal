@@ -8,6 +8,7 @@ import {
 } from "@/lib/history";
 import MarketQuote from "@/components/MarketQuote";
 import PrimarySignalCard from "@/components/PrimarySignalCard";
+import WalletConnectButton from "@/components/WalletConnectButton";
 
 type PageProps = {
   searchParams: Promise<{
@@ -113,10 +114,11 @@ export default async function Home({ searchParams }: PageProps) {
               {label}
             </a>
           ))}
-          <div className="ml-auto flex items-center gap-2 text-xs text-white/45">
+          <div className="ml-auto hidden items-center gap-2 text-xs text-white/45 sm:flex">
             <span className="h-2 w-2 rounded-full bg-emerald-400" />
             {snapshot.source === "panta" ? "Live Panta API" : "Sample data"}
           </div>
+          <WalletConnectButton compact />
         </div>
       </header>
 

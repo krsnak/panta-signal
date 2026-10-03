@@ -508,6 +508,23 @@ S2 is complete. Next phase: S3 submission packaging and final judge-flow polish.
 - Step 4 is constrained to documented Panta primary-market execution only; secondary-market order-book trading is not implied by the current UI.
 - Execution UX explicitly states USDC on Solana, non-custodial wallet control, wallet approval before broadcast, and trading risk.
 
+### S3 end-to-end proof demo
+
+**IMPLEMENTED — pending real user-approved transaction**
+
+Target recording flow:
+
+1. Connect Phantom.
+2. Open a supported primary Panta market.
+3. Request a small USDC YES/NO quote.
+4. Build the unsigned transaction.
+5. Review and explicitly approve it in Phantom.
+6. Panta Signal submits and verifies the resulting Solana signature.
+7. Panta Signal checks the public Panta trade feed for the exact same signature and marks it as evidence when indexed.
+8. Open the transaction in Solana Explorer.
+
+The implementation does not auto-sign, auto-trade, hold keys, or simulate unsupported secondary-market execution.
+
 ## Sprint S4 — Only after submission blockers are cleared
 **Priority: P2**
 
