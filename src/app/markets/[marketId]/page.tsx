@@ -116,7 +116,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     <main className="min-h-screen bg-[#07110d] text-white">
       <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" className="text-sm font-medium text-emerald-300 hover:text-emerald-200">← Markets</Link>
+          <Link href="/" className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/[0.08] px-3.5 py-2 text-sm font-medium text-emerald-200 shadow-[0_8px_24px_rgba(52,211,153,0.08)] transition hover:border-emerald-300/35 hover:bg-emerald-300/[0.14] hover:text-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#07110d] active:translate-y-px">← Markets</Link>
           <div className="flex items-center gap-3">
             <span className="hidden text-xs uppercase tracking-[0.16em] text-white/25 sm:inline">Powered by Panta</span>
             <WalletConnectButton compact />
