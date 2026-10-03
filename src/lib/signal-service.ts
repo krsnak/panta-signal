@@ -7,6 +7,7 @@ import {
   type MarketHistoryPoint,
 } from "@/lib/history";
 import {
+  getCurrentPublicRegistryMarkets,
   getMarketDetail,
   getMarketTrades,
   type PantaMarket,
@@ -107,9 +108,15 @@ export async function getCanonicalSignalFeed(options?: {
 }) {
   const hours = Math.max(1, options?.hours ?? 24);
   const limit = Math.min(Math.max(options?.limit ?? 6, 1), 10);
-  const observed = await getRecentlyObservedMarkets(hours, Math.max(limit * 2, 10));
+  const [observed, currentMarkets] = await Promise.all([
+    getRecentlyObservedMarkets(hours, Math.max(limit * 2, 10)),
+    getCurrentPublicRegistryMarkets(20).catch(() => []),
+  ]);
+  const candidates = new Map<string, PantaMarket>();
+  for (const market of currentMarkets) candidates.set(market.id, market);
+  for (const market of observed) candidates.set(market.id, market);
   const settled = await Promise.allSettled(
-    observed.map((market) => getCanonicalMarketSignal(market.id, hours)),
+    [...candidates.values()].map((market) => getCanonicalMarketSignal(market.id, hours)),
   );
   const failedCount = settled.filter((result) => result.status === "rejected").length;
   const signals = settled
@@ -123,7 +130,7 @@ export async function getCanonicalSignalFeed(options?: {
 
   return {
     signals: rankMarketSignals(signals.filter(isMeaningfulSignal)).slice(0, limit),
-    observedCount: observed.length,
+    observedCount: candidates.size,
     failedCount,
   };
 }

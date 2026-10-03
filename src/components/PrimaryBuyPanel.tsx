@@ -97,7 +97,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
   const [busy, setBusy] = useState(false);
   const [flowWallet, setFlowWallet] = useState("");
 
-  async function requestQuote() {
+  async function prepareOrder() {
     if (!wallet) return setStatus("Connect a wallet first.");
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
@@ -107,34 +107,19 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
       setBusy(true);
       setOrder(null);
       setReceipt(null);
-      const result = await postJson<Quote>("/api/panta/orders/quote", {
+      setStatus("Preparing live Panta quote…");
+      let activeQuote = await postJson<Quote>("/api/panta/orders/quote", {
         wallet,
         marketId,
         side,
         amountUsdc: amount,
       });
-      setQuote(result);
+      setQuote(activeQuote);
       setFlowWallet(wallet);
-      setStatus("Quote ready. Review it before building the transaction.");
-    } catch (error) {
-      setQuote(null);
-      setStatus(error instanceof Error ? error.message : "Quote failed.");
-    } finally {
-      setBusy(false);
-    }
-  }
 
-  async function buildOrder() {
-    if (!quote || !wallet) return;
-    if (flowWallet !== wallet) {
-      return setStatus("Wallet changed. Request a fresh quote for the currently connected Phantom account.");
-    }
-    try {
-      setBusy(true);
-      setReceipt(null);
-      let activeQuote = quote;
       let result: BuiltOrder;
       try {
+        setStatus("Preparing unsigned Solana transaction…");
         result = await postJson<BuiltOrder>("/api/panta/orders/build", {
           quoteId: activeQuote.quoteId,
           wallet,
@@ -144,8 +129,7 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         if (!(error instanceof ApiError) || error.code !== "INVALID_MARKET_PARAMS") {
           throw error;
         }
-
-        setStatus("Panta rejected the first build attempt. Refreshing the quote and retrying once…");
+        setStatus("Refreshing quote and retrying once…");
         activeQuote = await postJson<Quote>("/api/panta/orders/quote", {
           wallet,
           marketId,
@@ -160,15 +144,14 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         });
       }
       setOrder(result);
-      setStatus("Unsigned transaction built. Your wallet will show the final signing request.");
+      setStatus("Trade prepared. Review the final transfers in Phantom before confirming.");
     } catch (error) {
+      setQuote(null);
       setOrder(null);
       if (error instanceof ApiError && error.code === "INVALID_MARKET_PARAMS") {
-        setStatus(
-          "Panta could not build an unsigned transaction for this wallet/market combination. No transaction was created, signed, or sent. The live Panta API currently rejects some fresh wallets at the build stage; a wallet that has previously completed a Panta trade succeeds in our reproduction.",
-        );
+        setStatus("Panta could not prepare this trade for the current wallet/market. Nothing was signed or sent.");
       } else {
-        setStatus(error instanceof Error ? error.message : "Build failed.");
+        setStatus(error instanceof Error ? error.message : "Unable to prepare trade.");
       }
     } finally {
       setBusy(false);
@@ -286,15 +269,13 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
   const visibleReceipt = flowMatchesWallet ? receipt : null;
   const flowStep = visibleReceipt
     ? visibleReceipt.status === "confirmed"
-      ? 5
-      : 4
-    : visibleOrder
       ? 3
-      : visibleQuote
-        ? 2
-        : wallet
-          ? 1
-          : 0;
+      : 2
+    : visibleOrder
+      ? 2
+      : wallet
+        ? 1
+        : 0;
 
   if (!enabled) {
     return (
@@ -311,8 +292,8 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-5 gap-1.5">
-        {["Wallet", "Quote", "Build", "Sign", "Verify"].map((label, index) => {
+      <div className="grid grid-cols-3 gap-1.5">
+        {["Wallet", "Review", "Confirm"].map((label, index) => {
           const complete = flowStep > index;
           const current = flowStep === index;
           return (
@@ -361,10 +342,10 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         <button
           type="button"
           disabled={busy || !wallet}
-          onClick={requestQuote}
-          className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#07110d] disabled:opacity-40"
+          onClick={prepareOrder}
+          className="rounded-xl bg-emerald-300 px-5 py-3 text-sm font-semibold text-[#07110d] disabled:opacity-40"
         >
-          Get quote
+          {busy ? "Preparing…" : `Review ${side.toUpperCase()} · ${amount} USDC`}
         </button>
       </div>
 
@@ -372,8 +353,8 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         Trading involves risk and you can lose the USDC used to acquire a position. Prices are market-driven and are not financial advice.
       </div>
 
-      {visibleQuote && (
-        <div className="rounded-2xl border border-white/10 bg-black/15 p-5">
+      {visibleQuote && visibleOrder && (
+        <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.05] p-5">
           <div className="grid gap-4 sm:grid-cols-4">
             <div><div className="text-xs text-white/35">Deposit</div><div className="mt-1 font-medium">{visibleQuote.amountUsdc} USDC</div></div>
             <div><div className="text-xs text-white/35">Est. shares</div><div className="mt-1 font-medium">{visibleQuote.shares}</div></div>
@@ -381,35 +362,14 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
             <div><div className="text-xs text-white/35">Protocol fee</div><div className="mt-1 font-medium">{visibleQuote.feeUsdc} USDC</div></div>
           </div>
           {visibleQuote.disclaimer && <p className="mt-4 text-xs leading-5 text-amber-200/70">{visibleQuote.disclaimer}</p>}
-          {!visibleOrder && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={buildOrder}
-              className="mt-5 rounded-xl border border-white/15 px-4 py-2.5 text-sm font-medium text-white/75 disabled:opacity-40"
-            >
-              Build unsigned transaction
-            </button>
-          )}
-        </div>
-      )}
-
-      {visibleOrder && (
-        <div className="rounded-2xl border border-emerald-300/20 bg-emerald-300/[0.05] p-5">
-          <p className="text-sm leading-6 text-white/60">
-            {visibleOrder.instructions.length > 0
-              ? "Panta returned unsigned Solana instructions. Only your wallet can approve and sign them. Review the wallet prompt before broadcasting."
-              : "Panta test mode returned a sandbox build preview with no on-chain instructions. Nothing can be signed or broadcast from this fixture."}
-          </p>
-          {visibleOrder.disclaimer && <p className="mt-3 text-xs leading-5 text-amber-200/70">{visibleOrder.disclaimer}</p>}
           {visibleOrder.instructions.length > 0 && (
             <button
               type="button"
               disabled={busy}
-              onClick={signAndSubmit}
-              className="mt-4 rounded-xl bg-emerald-300 px-5 py-3 text-sm font-semibold text-[#07110d] disabled:opacity-40"
+              onClick={() => void signAndSubmit()}
+              className="mt-5 w-full rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#07110d] disabled:opacity-40"
             >
-              Review, sign & send in wallet
+              Review & confirm in Phantom
             </button>
           )}
         </div>
