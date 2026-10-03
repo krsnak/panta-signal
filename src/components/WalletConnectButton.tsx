@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useSolanaWallet } from "@/components/SolanaWalletProvider";
 
 export default function WalletConnectButton({ compact = false }: { compact?: boolean }) {
@@ -12,6 +13,24 @@ export default function WalletConnectButton({ compact = false }: { compact?: boo
     available,
     error,
   } = useSolanaWallet();
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
 
   function isMobileBrowser() {
     return typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -33,19 +52,46 @@ export default function WalletConnectButton({ compact = false }: { compact?: boo
 
   if (wallet) {
     return (
-      <div className="flex items-center gap-1.5">
-        <div className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-medium text-emerald-200">
-          <span className="h-2 w-2 rounded-full bg-emerald-300" />
-          Phantom {wallet.slice(0, 4)}…{wallet.slice(-4)}
-        </div>
+      <div ref={menuRef} className="relative">
         <button
           type="button"
-          onClick={() => void disconnect()}
-          disabled={disconnecting}
-          className="rounded-xl border border-white/10 bg-white/[0.03] px-2.5 py-2 text-xs font-medium text-white/45 transition hover:bg-white/[0.07] hover:text-white/75 disabled:opacity-50"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-medium text-emerald-200 transition hover:bg-emerald-300/[0.14]"
         >
-          {disconnecting ? "Disconnecting…" : "Disconnect"}
+          <span className="h-2 w-2 rounded-full bg-emerald-300" />
+          Phantom {wallet.slice(0, 4)}…{wallet.slice(-4)}
         </button>
+        {open && (
+          <div
+            role="menu"
+            className="absolute right-0 z-50 mt-2 w-[270px] rounded-2xl border border-white/10 bg-[#10161a] p-3 shadow-2xl shadow-black/40"
+          >
+            <div className="px-2 pb-2">
+              <div className="text-xs font-semibold text-white/80">Connected with Phantom</div>
+              <div className="mt-1 break-all font-mono text-[10px] leading-4 text-white/35">{wallet}</div>
+            </div>
+            <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5 text-[11px] leading-4 text-white/45">
+              Phantom may reconnect this trusted site without another connection prompt. Every transaction still requires a separate wallet approval.
+            </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={async () => {
+                setOpen(false);
+                await disconnect();
+              }}
+              disabled={disconnecting}
+              className="mt-2 w-full rounded-xl border border-white/10 px-3 py-2.5 text-left text-xs font-medium text-white/65 transition hover:bg-white/[0.06] hover:text-white disabled:opacity-50"
+            >
+              {disconnecting ? "Disconnecting…" : "Disconnect this session"}
+            </button>
+            <p className="mt-2 px-2 text-[10px] leading-4 text-white/30">
+              To require a new connection approval later, revoke this site from Phantom&apos;s connected/trusted apps settings.
+            </p>
+          </div>
+        )}
       </div>
     );
   }
