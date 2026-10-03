@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { quotePrimaryBuy } from "@/lib/panta";
+import { PantaApiError, quotePrimaryBuy } from "@/lib/panta";
 import {
   isMarketSide,
   isPositiveUsdcAmount,
@@ -34,6 +34,12 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(quote, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    if (error instanceof PantaApiError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to quote order" },
       { status: 502 },

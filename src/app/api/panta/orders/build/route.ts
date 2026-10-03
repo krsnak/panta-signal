@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildPrimaryBuy } from "@/lib/panta";
+import { PantaApiError, buildPrimaryBuy } from "@/lib/panta";
 import {
   isOpaqueSessionId,
   isSlippageBps,
@@ -29,6 +29,12 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(order, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
+    if (error instanceof PantaApiError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status },
+      );
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to build order" },
       { status: 502 },

@@ -105,7 +105,7 @@ type PantaFetchOptions = {
   noStore?: boolean;
 };
 
-class PantaApiError extends Error {
+export class PantaApiError extends Error {
   status: number;
   code: string | null;
 
@@ -254,7 +254,11 @@ async function pantaPost<T>(path: string, body: unknown): Promise<T> {
       // Keep status-only error.
     }
     const suffix = [code, detail].filter(Boolean).join(" — ");
-    throw new Error(`Panta API ${response.status}${suffix ? `: ${suffix}` : ""}`);
+    throw new PantaApiError(
+      `Panta API ${response.status}${suffix ? `: ${suffix}` : ""}`,
+      response.status,
+      code || null,
+    );
   }
 
   return (await response.json()) as T;

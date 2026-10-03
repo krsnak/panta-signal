@@ -45,14 +45,32 @@ type ExecutionReceipt = {
   indexed?: boolean;
 };
 
+class ApiError extends Error {
+  code?: string;
+  status: number;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const parsed = await response.json() as T & { error?: string };
-  if (!response.ok) throw new Error(parsed.error || `Request failed (${response.status})`);
+  const parsed = await response.json() as T & { error?: string; code?: string };
+  if (!response.ok) {
+    throw new ApiError(
+      parsed.error || `Request failed (${response.status})`,
+      response.status,
+      parsed.code,
+    );
+  }
   return parsed;
 }
 
@@ -114,16 +132,44 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
     try {
       setBusy(true);
       setReceipt(null);
-      const result = await postJson<BuiltOrder>("/api/panta/orders/build", {
-        quoteId: quote.quoteId,
-        wallet,
-        maxSlippageBps: 100,
-      });
+      let activeQuote = quote;
+      let result: BuiltOrder;
+      try {
+        result = await postJson<BuiltOrder>("/api/panta/orders/build", {
+          quoteId: activeQuote.quoteId,
+          wallet,
+          maxSlippageBps: 100,
+        });
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.code !== "INVALID_MARKET_PARAMS") {
+          throw error;
+        }
+
+        setStatus("Panta rejected the first build attempt. Refreshing the quote and retrying once…");
+        activeQuote = await postJson<Quote>("/api/panta/orders/quote", {
+          wallet,
+          marketId,
+          side,
+          amountUsdc: amount,
+        });
+        setQuote(activeQuote);
+        result = await postJson<BuiltOrder>("/api/panta/orders/build", {
+          quoteId: activeQuote.quoteId,
+          wallet,
+          maxSlippageBps: 100,
+        });
+      }
       setOrder(result);
       setStatus("Unsigned transaction built. Your wallet will show the final signing request.");
     } catch (error) {
       setOrder(null);
-      setStatus(error instanceof Error ? error.message : "Build failed.");
+      if (error instanceof ApiError && error.code === "INVALID_MARKET_PARAMS") {
+        setStatus(
+          "Panta could not build an unsigned transaction for this wallet/market combination. No transaction was created, signed, or sent. The live Panta API currently rejects some fresh wallets at the build stage; a wallet that has previously completed a Panta trade succeeds in our reproduction.",
+        );
+      } else {
+        setStatus(error instanceof Error ? error.message : "Build failed.");
+      }
     } finally {
       setBusy(false);
     }
