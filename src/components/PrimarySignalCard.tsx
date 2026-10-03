@@ -106,6 +106,9 @@ export default function PrimarySignalCard({
   const change = signal?.movement.changePoints ?? null;
   const quoteState = signal?.quoteState ?? "loading";
   const stale = signal?.current.freshnessState === "stale";
+  const displayTitle = signal?.market.title ?? fallback.title;
+  const displayCategory = signal?.market.category ?? fallback.category;
+  const displayImageUrl = signal?.market.imageUrl ?? fallback.imageUrl;
 
   return (
     <section id="featured" className="overflow-hidden rounded-2xl border border-[#263038] bg-[#0f1418] shadow-xl shadow-black/15">
@@ -129,10 +132,10 @@ export default function PrimarySignalCard({
 
       <div className="grid gap-0 lg:grid-cols-[300px_1fr_330px]">
         <div className="relative min-h-[220px] overflow-hidden border-b border-[#20282e] bg-[#0b0f12] lg:border-b-0 lg:border-r">
-          {fallback.imageUrl?.includes("res.cloudinary.com") ? (
+          {displayImageUrl?.includes("res.cloudinary.com") ? (
             <Image
-              src={fallback.imageUrl}
-              alt={signal?.market.title ?? fallback.title}
+              src={displayImageUrl}
+              alt={displayTitle}
               fill
               sizes="300px"
               className="object-cover"
@@ -145,14 +148,14 @@ export default function PrimarySignalCard({
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
             <span className="inline-flex rounded-full bg-black/45 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/65 backdrop-blur">
-              {fallback.category}
+              {displayCategory}
             </span>
           </div>
         </div>
 
         <div className="p-5 sm:p-6">
           <h2 className="max-w-4xl text-xl font-semibold leading-tight tracking-[-0.02em] sm:text-2xl">
-            {signal?.market.title ?? fallback.title}
+            {displayTitle}
           </h2>
           <div className="mt-2 text-sm leading-5 text-white/55">
             {signal ? plainSignalTakeaway(signal) : "Loading the latest grounded market signal…"}

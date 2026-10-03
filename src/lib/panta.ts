@@ -492,20 +492,61 @@ async function findCatalogMarket(marketId: string) {
   return null;
 }
 
+async function findPublicRegistryEvent(marketId: string): Promise<PublicRegistryEvent | null> {
+  try {
+    const response = await fetch(PUBLIC_REGISTRY_URL, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(3500),
+    });
+    if (!response.ok) return null;
+    const body = (await response.json()) as PublicRegistryResponse;
+    return (
+      (body.data ?? []).find((event) => event.eventPda?.trim() === marketId) ??
+      null
+    );
+  } catch {
+    return null;
+  }
+}
+
+function mergePublicRegistryMetadata(
+  market: PantaMarket,
+  event: PublicRegistryEvent | null,
+): PantaMarket {
+  if (!event) return market;
+  return {
+    ...market,
+    title: event.title?.trim() || market.title,
+    description: event.description?.trim() || market.description,
+    category: event.Category?.trim() || market.category,
+    imageUrl: event.images?.[0] || market.imageUrl,
+  };
+}
+
 export async function getMarketDetail(marketId: string): Promise<PantaMarket> {
+  const registryEventPromise = findPublicRegistryEvent(marketId);
   try {
     const detail = await pantaFetch<CatalogMarket>(
       `markets/${encodeURIComponent(marketId)}/`,
       { timeoutMs: 3500, retries: 1, revalidate: 10 },
     );
-    if (hasUsefulDetail(detail)) return normalizeMarket(detail);
+    if (hasUsefulDetail(detail)) {
+      return mergePublicRegistryMetadata(
+        normalizeMarket(detail),
+        await registryEventPromise,
+      );
+    }
   } catch {
     // Fall through to the catalog row, which remains useful even if live RPC is unavailable.
   }
 
   const fallback = await findCatalogMarket(marketId);
   if (!fallback) throw new Error("Panta market metadata is temporarily unavailable");
-  return normalizeMarket(fallback, fallback);
+  return mergePublicRegistryMetadata(
+    normalizeMarket(fallback, fallback),
+    await registryEventPromise,
+  );
 }
 
 export async function getFullMarketCatalog(options?: {
@@ -561,9 +602,9 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
             const detail = await getMarketDetail(id);
             return {
               ...detail,
-              description: detail.description || event.description?.trim() || "",
+              description: event.description?.trim() || detail.description || "",
               category: event.Category?.trim() || detail.category,
-              imageUrl: detail.imageUrl || event.images?.[0] || null,
+              imageUrl: event.images?.[0] || detail.imageUrl || null,
             } satisfies PantaMarket;
           } catch {
             if (attempt < 2) {
