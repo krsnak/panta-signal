@@ -10,7 +10,11 @@ import PrimarySignalCard from "@/components/PrimarySignalCard";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import { getCanonicalSignalFeed } from "@/lib/signal-service";
 import { isRelevantMarket } from "@/lib/panta-core";
-import { PANTA_PROGRAM_ID, readPantaOrderBook } from "@/lib/panta-orderbook";
+import {
+  PANTA_PROGRAM_ID,
+  readPantaOrderBook,
+  type PantaOrderBook,
+} from "@/lib/panta-orderbook";
 
 type PageProps = {
   searchParams: Promise<{
@@ -55,6 +59,25 @@ function isClearlyTestMarket(market: { id: string; title: string; description: s
   );
 }
 
+function bestOpportunity(orderBook: PantaOrderBook, action: "buy" | "sell") {
+  const candidates = [
+    orderBook.best[action].yes,
+    orderBook.best[action].no,
+  ].filter((row): row is NonNullable<typeof row> => row !== null);
+
+  return candidates.sort((left, right) => {
+    const leftPrice = Number(left.price);
+    const rightPrice = Number(right.price);
+    return action === "buy" ? leftPrice - rightPrice : rightPrice - leftPrice;
+  })[0] ?? null;
+}
+
+function formatOrderPrice(value: string) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return value;
+  return numeric.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+}
+
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
   const snapshot = await getMarketSnapshot({
@@ -90,15 +113,8 @@ export default async function Home({ searchParams }: PageProps) {
         Math.min(market.volumeUsdc, 1000);
       return score(b) - score(a);
     });
-  const visibleMarkets =
-    judgeFacingMarkets.length > 0
-      ? hasExplicitCatalogQuery
-        ? judgeFacingMarkets
-        : judgeFacingMarkets.slice(0, 6)
-      : [];
-  const liveMarkets = visibleMarkets;
   const secondaryLiquidityResults = await Promise.all(
-    liveMarkets.map(async (market) => {
+    judgeFacingMarkets.map(async (market) => {
       if (market.phase.toLowerCase() !== "secondary") return [market.id, null] as const;
       const orderBook = await readPantaOrderBook(market.id, {
         programId: PANTA_PROGRAM_ID,
@@ -108,6 +124,30 @@ export default async function Home({ searchParams }: PageProps) {
     }),
   );
   const secondaryLiquidity = new Map(secondaryLiquidityResults);
+  const rankedMarkets = [...judgeFacingMarkets].sort((a, b) => {
+    const liquidityRank = (market: (typeof judgeFacingMarkets)[number]) => {
+      const phase = market.phase.toLowerCase();
+      const orderBook = secondaryLiquidity.get(market.id);
+      if (phase === "secondary" && (orderBook?.counts.activeOrders ?? 0) > 0) return 3;
+      if (phase === "primary") return 2;
+      if (phase === "secondary" && orderBook !== null) return 1;
+      return 0;
+    };
+    const rankDelta = liquidityRank(b) - liquidityRank(a);
+    if (rankDelta !== 0) return rankDelta;
+
+    const activityScore = (market: (typeof judgeFacingMarkets)[number]) =>
+      (observedIds.has(market.id) ? 1000 : 0) +
+      (market.yesProbability !== null && market.noProbability !== null ? 100 : 0) +
+      Math.min(market.volumeUsdc, 1000);
+    return activityScore(b) - activityScore(a);
+  });
+  const liveMarkets =
+    rankedMarkets.length > 0
+      ? hasExplicitCatalogQuery
+        ? rankedMarkets
+        : rankedMarkets.slice(0, 6)
+      : [];
   const primarySignalMarket = canonicalFeed.signals[0]?.market ?? null;
 
   return (
@@ -242,7 +282,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <div className="text-xs uppercase tracking-[0.18em] text-white/30">Current registry</div>
                 <h2 className="mt-2 text-xl font-semibold">Current Panta markets</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
-                  Current primary and secondary markets from Panta. Markets without real price discovery remain visible, but are not presented as meaningful 50/50 signals.
+                  Current Panta markets ranked by immediate tradability first. Secondary liquidity comes directly from live Solana OrderNode accounts, while recent fills remain a separate activity signal.
                 </p>
               </div>
               <span className="text-xs text-white/25">
@@ -251,64 +291,89 @@ export default async function Home({ searchParams }: PageProps) {
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {liveMarkets.map((market) => (
-                <Link
-                  key={market.id}
-                  href={marketDetailHref(market)}
-                  className="group overflow-hidden rounded-2xl border border-[#20282e] bg-[#0b0f12] transition hover:-translate-y-0.5 hover:border-[#303b43] hover:bg-[#12181d]"
-                >
-                  <div className="relative aspect-[16/7.5] overflow-hidden bg-[#151b20]">
-                    {market.imageUrl?.includes("res.cloudinary.com") ? (
-                      <Image
-                        src={market.imageUrl}
-                        alt=""
-                        fill
-                        className="object-cover transition duration-300 group-hover:scale-[1.02]"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_30%_30%,rgba(148,163,184,.14),transparent_48%)]">
-                        <span className="text-xs uppercase tracking-[0.18em] text-white/20">Panta market</span>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f12] via-transparent to-transparent" />
-                    <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/70 backdrop-blur">
-                      {market.category}
-                    </span>
-                    {market.phase.toLowerCase() === "secondary" && (
-                      <span className={`absolute right-4 top-4 rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${
-                        secondaryLiquidity.get(market.id) === null
-                          ? "border-white/10 bg-black/55 text-white/45"
-                          : (secondaryLiquidity.get(market.id)?.counts.activeOrders ?? 0) > 0
-                            ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100"
-                            : "border-amber-300/20 bg-amber-300/10 text-amber-100/80"
-                      }`}>
-                        {secondaryLiquidity.get(market.id) === null
-                          ? "Liquidity unavailable"
-                          : (secondaryLiquidity.get(market.id)?.counts.activeOrders ?? 0) > 0
-                            ? `Tradeable now · ${secondaryLiquidity.get(market.id)?.counts.activeOrders} orders`
-                            : "No immediate liquidity"}
+              {liveMarkets.map((market) => {
+                const orderBook = secondaryLiquidity.get(market.id);
+                const bestBuy = orderBook ? bestOpportunity(orderBook, "buy") : null;
+                const bestSell = orderBook ? bestOpportunity(orderBook, "sell") : null;
+
+                return (
+                  <Link
+                    key={market.id}
+                    href={marketDetailHref(market)}
+                    className="group overflow-hidden rounded-2xl border border-[#20282e] bg-[#0b0f12] transition hover:-translate-y-0.5 hover:border-[#303b43] hover:bg-[#12181d]"
+                  >
+                    <div className="relative aspect-[16/7.5] overflow-hidden bg-[#151b20]">
+                      {market.imageUrl?.includes("res.cloudinary.com") ? (
+                        <Image
+                          src={market.imageUrl}
+                          alt=""
+                          fill
+                          className="object-cover transition duration-300 group-hover:scale-[1.02]"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_30%_30%,rgba(148,163,184,.14),transparent_48%)]">
+                          <span className="text-xs uppercase tracking-[0.18em] text-white/20">Panta market</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0b0f12] via-transparent to-transparent" />
+                      <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/70 backdrop-blur">
+                        {market.category}
                       </span>
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <h3 className="min-h-[3.5rem] text-base font-medium leading-6 text-white/85">
-                      {market.title}
-                    </h3>
-                    <div className="mt-4">
-                      <MarketQuote
-                        marketId={market.id}
-                        initialQuote={{
-                          yesProbability: market.yesProbability,
-                          noProbability: market.noProbability,
-                          phase: market.phase,
-                          volumeUsdc: market.volumeUsdc,
-                        }}
-                      />
+                      {market.phase.toLowerCase() === "secondary" && (
+                        <span className={`absolute right-4 top-4 rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${
+                          orderBook === null
+                            ? "border-white/10 bg-black/55 text-white/45"
+                            : (orderBook?.counts.activeOrders ?? 0) > 0
+                              ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100"
+                              : "border-amber-300/20 bg-amber-300/10 text-amber-100/80"
+                        }`}>
+                          {orderBook === null
+                            ? "Liquidity unavailable"
+                            : (orderBook?.counts.activeOrders ?? 0) > 0
+                              ? `Tradeable now · ${orderBook?.counts.activeOrders} orders`
+                              : "No immediate liquidity"}
+                        </span>
+                      )}
                     </div>
-                  </div>
-                </Link>
-              ))}
+                    <div className="p-5">
+                      <h3 className="min-h-[3.5rem] text-base font-medium leading-6 text-white/85">
+                        {market.title}
+                      </h3>
+                      <div className="mt-4">
+                        <MarketQuote
+                          marketId={market.id}
+                          initialQuote={{
+                            yesProbability: market.yesProbability,
+                            noProbability: market.noProbability,
+                            phase: market.phase,
+                            volumeUsdc: market.volumeUsdc,
+                          }}
+                        />
+                      </div>
+                      {orderBook && orderBook.counts.activeOrders > 0 && (
+                        <div className="mt-4 border-t border-white/8 pt-3">
+                          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
+                            Best live orders
+                          </div>
+                          <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                            {bestBuy && (
+                              <span className="rounded-lg border border-emerald-300/15 bg-emerald-300/[0.06] px-2.5 py-1.5 text-emerald-100/80">
+                                Buy {bestBuy.outcome.toUpperCase()} · {formatOrderPrice(bestBuy.price)} {bestBuy.quoteAsset}
+                              </span>
+                            )}
+                            {bestSell && (
+                              <span className="rounded-lg border border-rose-300/15 bg-rose-300/[0.06] px-2.5 py-1.5 text-rose-100/80">
+                                Sell {bestSell.outcome.toUpperCase()} · {formatOrderPrice(bestSell.price)} {bestSell.quoteAsset}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

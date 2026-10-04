@@ -92,6 +92,12 @@ kept separate from 24h fill activity: recent trades do not guarantee an
 executable counterparty now, and a resting live order can exist without a
 recent completed fill.
 
+The market catalog now prioritizes secondary markets with executable on-chain
+orders, followed by primary markets, then inactive secondary markets. Tradeable
+secondary cards also show the best current taker BUY and SELL opportunity,
+including outcome, executable price and quote asset, before the user opens
+Panta's trading interface.
+
 ## Trade-count verification
 
 The Manchester market showed **2 trades in the last 24h** in the Panta API.
