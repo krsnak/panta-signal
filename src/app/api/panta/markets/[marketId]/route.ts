@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMarketDetail } from "@/lib/panta";
-import { isClosedMarketStatus, isRelevantMarket } from "@/lib/panta-core";
+import {
+  isClosedMarketStatus,
+  isRelevantMarket,
+  sanitizeProbabilityPair,
+} from "@/lib/panta-core";
 import {
   getLatestMarketSnapshot,
   recordMarketSnapshots,
@@ -35,7 +39,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
         : cached?.capturedAt ?? null;
     const ageSeconds =
       observedAt === null ? null : Math.max(0, Math.round((Date.now() - observedAt) / 1000));
-    const responseMarket =
+    const responseMarket = sanitizeProbabilityPair(
       quoteState === "cached" && cached
         ? {
             ...market,
@@ -43,7 +47,8 @@ export async function GET(_request: NextRequest, context: RouteContext) {
             noProbability: cached.noProbability,
             volumeUsdc: market.volumeUsdc || cached.volumeUsdc,
           }
-        : market;
+        : market,
+    );
 
     return NextResponse.json(
       {
@@ -66,7 +71,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
       const ageSeconds = Math.max(0, Math.round((Date.now() - observedAt) / 1000));
       return NextResponse.json(
         {
-          market: {
+          market: sanitizeProbabilityPair({
             id: cached.marketId,
             title: cached.title,
             description: cached.description,
@@ -77,7 +82,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
             yesProbability: cached.yesProbability,
             noProbability: cached.noProbability,
             volumeUsdc: cached.volumeUsdc,
-          },
+          }),
           quoteState: "cached",
           observedAt,
           ageSeconds,

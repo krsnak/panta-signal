@@ -12,7 +12,7 @@ import {
   getMarketTrades,
   type PantaMarket,
 } from "@/lib/panta";
-import { isRelevantMarket } from "@/lib/panta-core";
+import { isRelevantMarket, sanitizeProbabilityPair } from "@/lib/panta-core";
 import {
   buildMarketSignal,
   isMeaningfulSignal,
@@ -74,7 +74,7 @@ export async function getCanonicalMarketSignal(
           : "unavailable";
 
   const baseMarket = detail ?? marketFromHistory(latestHistory as MarketHistoryPoint);
-  const market =
+  const market = sanitizeProbabilityPair(
     quoteState === "cached" && latestHistory
       ? {
           ...baseMarket,
@@ -82,7 +82,8 @@ export async function getCanonicalMarketSignal(
           noProbability: latestHistory.noProbability,
           volumeUsdc: baseMarket.volumeUsdc || latestHistory.volumeUsdc,
         }
-      : baseMarket;
+      : baseMarket,
+  );
 
   const quoteObservedAt =
     quoteState === "live" || quoteState === "resolved"
