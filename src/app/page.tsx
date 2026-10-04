@@ -335,6 +335,11 @@ export default async function Home({ searchParams }: PageProps) {
                               : "No immediate liquidity"}
                         </span>
                       )}
+                      {market.phase.toLowerCase() === "primary" && (
+                        <span className="absolute right-4 top-4 rounded-full border border-white/10 bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white/45 backdrop-blur">
+                          Primary · verify after wallet connect
+                        </span>
+                      )}
                     </div>
                     <div className="p-5">
                       <h3 className="min-h-[3.5rem] text-base font-medium leading-6 text-white/85">

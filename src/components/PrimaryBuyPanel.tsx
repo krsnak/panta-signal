@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Buffer } from "buffer";
 import {
   PublicKey,
@@ -44,6 +44,8 @@ type ExecutionReceipt = {
   status: string;
   indexed?: boolean;
 };
+
+type PrimaryAvailability = "unknown" | "checking" | "executable" | "unavailable";
 
 class ApiError extends Error {
   code?: string;
@@ -127,9 +129,50 @@ export default function PrimaryBuyPanel({
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
   const [flowWallet, setFlowWallet] = useState("");
+  const [primaryAvailability, setPrimaryAvailability] =
+    useState<PrimaryAvailability>("unknown");
+
+  useEffect(() => {
+    if (phase !== "primary" || !wallet) {
+      return;
+    }
+
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) setPrimaryAvailability("checking");
+    });
+    void postJson<Quote>("/api/panta/orders/quote", {
+      wallet,
+      marketId,
+      side: "yes",
+      amountUsdc: "1.00",
+    })
+      .then(() => {
+        if (!cancelled) setPrimaryAvailability("executable");
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        if (
+          error instanceof ApiError &&
+          (error.code === "MARKET_NOT_IN_PRIMARY" ||
+            error.code === "INVALID_MARKET_PARAMS")
+        ) {
+          setPrimaryAvailability("unavailable");
+        } else {
+          setPrimaryAvailability("unknown");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [marketId, phase, wallet]);
 
   async function prepareOrder() {
     if (!wallet) return setStatus("Connect a wallet first.");
+    if (primaryAvailability === "unavailable") {
+      return setStatus("Panta is not accepting primary orders for this market right now.");
+    }
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       return setStatus("Enter a valid positive USDC amount.");
@@ -425,7 +468,28 @@ export default function PrimaryBuyPanel({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="text-sm uppercase tracking-[0.18em] text-white/35">Primary market · non-custodial</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-sm uppercase tracking-[0.18em] text-white/35">Primary market · non-custodial</div>
+            <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+              !wallet
+                ? "border-white/10 bg-white/[0.03] text-white/35"
+                : primaryAvailability === "executable"
+                  ? "border-emerald-300/20 bg-emerald-300/[0.08] text-emerald-200"
+                  : primaryAvailability === "unavailable"
+                    ? "border-amber-300/20 bg-amber-300/[0.06] text-amber-100/70"
+                    : "border-white/10 bg-white/[0.03] text-white/45"
+            }`}>
+              {!wallet
+                ? "Connect wallet to verify"
+                : primaryAvailability === "checking"
+                  ? "Checking execution…"
+                  : primaryAvailability === "executable"
+                    ? "Executable primary"
+                    : primaryAvailability === "unavailable"
+                      ? "Primary listed · orders unavailable"
+                      : "Execution unverified"}
+            </span>
+          </div>
           <h2 className="mt-2 text-2xl font-semibold">Buy YES / NO on Panta</h2>
           <p className="mt-2 max-w-2xl text-xs leading-5 text-white/40">
             Primary-market purchases can be executed directly with an external Solana wallet. Phantom is currently supported. Panta&apos;s native secondary trading remains in the official Panta interface.
@@ -457,13 +521,24 @@ export default function PrimaryBuyPanel({
         />
         <button
           type="button"
-          disabled={busy || !wallet}
+          disabled={
+            busy ||
+            !wallet ||
+            primaryAvailability === "checking" ||
+            primaryAvailability === "unavailable"
+          }
           onClick={prepareOrder}
           className="rounded-xl bg-emerald-300 px-5 py-3 text-sm font-semibold text-[#07110d] disabled:opacity-40"
         >
           {busy ? "Preparing…" : `Review ${side.toUpperCase()} · ${amount} USDC`}
         </button>
       </div>
+
+      {wallet && primaryAvailability === "unavailable" && (
+        <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.04] px-4 py-3 text-xs leading-5 text-amber-100/65">
+          Panta lists this as a primary market, but its live primary-order quote endpoint is not accepting orders for the connected wallet right now. Panta Signal therefore does not label it executable.
+        </div>
+      )}
 
       <div className="rounded-xl border border-amber-300/15 bg-amber-300/[0.04] px-4 py-3 text-xs leading-5 text-amber-100/65">
         Trading involves risk and you can lose the USDC used to acquire a position. Prices are market-driven and are not financial advice.

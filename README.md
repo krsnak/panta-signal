@@ -108,6 +108,12 @@ An `open` registry status alone is not treated as executable: future-start
 markets are shown as scheduled instead of presenting a Review button that the
 Panta primary-order API will reject.
 
+For a current primary market, the connected client performs a read-only live
+quote preflight before presenting it as executable. The UI distinguishes
+`Primary · execution unverified`, `Executable primary`, and
+`Primary listed · orders unavailable`. No transaction is built, signed, or
+broadcast by this availability check.
+
 ## Trade-count verification
 
 The Manchester market showed **2 trades in the last 24h** in the Panta API.
