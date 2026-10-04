@@ -60,6 +60,32 @@ Panta mainnet program:
 
 The account has been independently verified through Solana RPC as executable. A real Panta mainnet transaction is linked directly from the homepage as one-click proof.
 
+### Read-only secondary order book PoC
+
+`GET /api/panta/markets/[marketId]/orderbook` reconstructs the current secondary book directly from Panta-owned Solana accounts. It resolves the market program and quote asset from the public registry, filters `OrderNode` and `PriceLevel` accounts by Anchor discriminator and event PDA, decodes their Borsh fields, removes uninitialized and zero-remaining nodes, and returns exact decimal strings for executable price, remaining shares and total quote value. The response always identifies itself as `source: "solana-onchain"`.
+
+The implementation is deliberately read-only: it only uses `getProgramAccounts` and `getSlot`. It contains no wallet, signing, instruction-building or transaction-submission path.
+
+Run the live BTC <58k diagnostic with:
+
+```bash
+npm run diagnose:orderbook
+```
+
+To inspect another event PDA:
+
+```bash
+PANTA_MARKET_ID=BpPmo7wHrh8bi3ea2ohiVy64sxEnSTufx67zTA9ntnfT npm run diagnose:orderbook
+```
+
+Current limitations:
+
+- `order_intent` is the maker's intent. Panta's “Sell Opportunities” / “Buy Opportunities” labels describe the taker's executable action, so the reader maps maker BUY to taker SELL and maker SELL to taker BUY. Both values are returned so this inference remains auditable.
+- Filled nodes can remain allocated until reaped. The reader excludes nodes whose `is_initialized` is false, remaining `amount` is zero, or price is zero; cancelled/closed accounts are absent from `getProgramAccounts`.
+- Price-level and order-node reads use confirmed commitment but are separate RPC calls, not an atomic snapshot. A concurrent fill may briefly make level aggregates and node counts disagree.
+- The current Panta client uses 9 share decimals for SOL books and 6 for USDC books, while secondary prices use a 9-decimal fixed-point scale for both. Other quote assets are rejected rather than guessed.
+- The decoder is tied to the current public Anchor IDL account discriminators and exact account sizes (269-byte `OrderNode`, 218-byte `PriceLevel`). A program layout upgrade requires updating and retesting the decoder.
+
 ## Trade-count verification
 
 The Manchester market showed **2 trades in the last 24h** in the Panta API.
@@ -109,7 +135,7 @@ DATABASE_URL=...
 
 ## Validation
 
-- 35 automated tests passing
+- 42 automated tests passing
 - ESLint passing
 - production build passing
 - public registry discovery verified
