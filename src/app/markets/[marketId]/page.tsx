@@ -193,7 +193,11 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
               </div>
             )}
             <div className="mt-5 border-t border-white/10 pt-5">
-              <PrimaryBuyPanel marketId={resolvedMarket.id} enabled={resolvedMarket.phase === "primary"} />
+              <PrimaryBuyPanel
+                marketId={resolvedMarket.id}
+                phase={resolvedMarket.phase}
+                title={resolvedMarket.title}
+              />
             </div>
           </aside>
         </section>

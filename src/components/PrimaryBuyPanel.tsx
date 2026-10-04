@@ -86,7 +86,26 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: string; enabled: boolean }) {
+function pantaMarketUrl(marketId: string, title: string) {
+  const slug =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80)
+      .replace(/-+$/g, "") || "market";
+  return `https://www.panta.market/market/${encodeURIComponent(marketId)}/${slug}`;
+}
+
+export default function PrimaryBuyPanel({
+  marketId,
+  phase,
+  title,
+}: {
+  marketId: string;
+  phase: string;
+  title: string;
+}) {
   const { wallet, provider, error: walletError } = useSolanaWallet();
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("1.00");
@@ -277,15 +296,40 @@ export default function PrimaryBuyPanel({ marketId, enabled }: { marketId: strin
         ? 1
         : 0;
 
-  if (!enabled) {
+  if (phase === "secondary") {
+    return (
+      <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/30">Secondary market</div>
+        <div className="text-base font-semibold text-white/80">Continue to Panta&apos;s live order book</div>
+        <p className="text-sm leading-6 text-white/40">
+          This market trades through Panta&apos;s secondary limit-order market. Panta Signal keeps the signal and verification layer here, then hands execution to the official Panta trading interface instead of recreating or simulating its order book.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <a
+            href={pantaMarketUrl(marketId, title)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center rounded-xl bg-emerald-300 px-4 py-2.5 text-sm font-semibold text-[#07110d] transition hover:bg-emerald-200"
+          >
+            Trade on Panta ↗
+          </a>
+          <WalletConnectButton />
+        </div>
+        <div className="text-[11px] leading-5 text-white/30">
+          Secondary execution remains Panta-native. No custom order-book logic or synthetic fill is introduced by Panta Signal.
+        </div>
+      </div>
+    );
+  }
+
+  if (phase !== "primary") {
     return (
       <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-5">
         <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/30">Trade on Panta</div>
-        <div className="text-base font-semibold text-white/75">Wallet execution is ready, but this market is not in primary phase.</div>
+        <div className="text-base font-semibold text-white/75">Trading is not available for this market state.</div>
         <p className="text-sm leading-6 text-white/40">
-          Panta Signal only enables its current YES/NO purchase flow on supported primary markets. Secondary-market order-book execution is not simulated.
+          Panta Signal only exposes execution when Panta reports a supported primary or secondary trading phase.
         </p>
-        <WalletConnectButton />
       </div>
     );
   }

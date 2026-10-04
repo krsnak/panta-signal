@@ -37,7 +37,7 @@ Panta Signal extends an existing prediction-market product with a clear new use 
 
 ## Panta API Sidetrack framing
 
-Panta Signal is built around practical Panta API usage: market discovery, canonical market detail, live probability, trade activity, positions and primary-order quote/build/submit/verify. The added value is the signal layer between Panta Intelligence and trading: detect a meaningful change, validate it against Panta activity, act through Panta, and verify the result on Solana. Panta remains the source of truth for current market and execution data.
+Panta Signal is built around practical Panta API usage: market discovery, canonical market detail, live probability, trade activity, positions and primary-order quote/build/submit/verify. The added value is the signal layer between Panta Intelligence and trading: detect a meaningful change, validate it against Panta activity, act through Panta, and verify the result on Solana. Primary execution is available directly in Panta Signal; secondary markets hand off to Panta's official live order book rather than duplicating its trading engine. Panta remains the source of truth for current market and execution data.
 
 ## Product positioning guardrail
 

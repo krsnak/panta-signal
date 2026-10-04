@@ -1223,6 +1223,12 @@ All pre-submission features must strengthen at least one of the three competitio
 
 If a feature does not strengthen one of those goals, defer it until after submission.
 
+Secondary-market execution strategy before submission:
+- do not build a parallel order book,
+- deep-link secondary markets into the exact official Panta market trading page,
+- keep primary quote/build/sign/verify in Panta Signal,
+- only implement direct secondary on-chain execution later if Panta exposes a documented integration surface suitable for third-party apps.
+
 ---
 
 # Definition of done

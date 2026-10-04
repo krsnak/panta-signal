@@ -147,7 +147,7 @@ export default async function Home({ searchParams }: PageProps) {
               {[
                 ["1", "Detect", "Meaningful YES/NO movement, not just a raw price"],
                 ["2", "Validate", `Public trades + ${signalCoverage.observations} stored observations`],
-                ["3", "Trade", "Act with Phantom on supported Panta markets"],
+                ["3", "Trade", "Primary in-app, secondary via Panta's live order book"],
                 ["4", "Verify", "Follow the resulting activity back to Solana"],
               ].map(([step, title, description]) => (
                 <div key={step} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 backdrop-blur-sm">

@@ -8,7 +8,7 @@ It answers four questions:
 
 1. **What changed?** — current YES/NO probability and observed movement.
 2. **Is real market activity behind it?** — recent Panta trades and traded shares.
-3. **Can I act on it?** — non-custodial wallet execution on supported Panta markets.
+3. **Can I act on it?** — non-custodial primary execution in-app, with a Panta-native handoff for secondary order-book markets.
 4. **Can I verify it?** — public Solana signatures and the Panta mainnet program.
 
 Production: https://panta-signal.vercel.app  
@@ -79,6 +79,8 @@ A non-custodial primary-order path is implemented:
 `Panta quote -> Panta build -> VersionedTransaction -> explicit wallet approval -> Solana broadcast -> Panta submit -> bounded Panta verify`
 
 The application never requests or stores a seed phrase or private key. No mainnet transaction is automatically signed or broadcast.
+
+Secondary markets use Panta's live limit-order interface. Panta Signal deliberately hands those markets to the official Panta market page rather than reimplementing or simulating Panta's order book. This keeps execution Panta-native while preserving Panta Signal's role as the signal, validation and verification layer.
 
 ## Stack
 
