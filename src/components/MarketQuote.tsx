@@ -41,6 +41,15 @@ export default function MarketQuote({ marketId, compact = false, initialQuote }:
   const [quoteState, setQuoteState] = useState<ApiResponse["quoteState"] | null>(null);
   const [ageSeconds, setAgeSeconds] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
+  const hasMeaningfulPriceDiscovery =
+    quote !== null &&
+    quote.yes !== null &&
+    quote.no !== null &&
+    !(
+      Math.abs(quote.yes - 0.5) < 0.000001 &&
+      Math.abs(quote.no - 0.5) < 0.000001 &&
+      (volumeUsdc ?? 0) <= 0
+    );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -93,6 +102,25 @@ export default function MarketQuote({ marketId, compact = false, initialQuote }:
         <span className="text-rose-300/75">NO {quote ? pct(quote.no) : "—"}</span>
         {stateLabel && <span className="text-white/25">{stateLabel}</span>}
         {phase && <span className="text-white/25">{phase}</span>}
+      </div>
+    );
+  }
+
+  if (!hasMeaningfulPriceDiscovery) {
+    const parts = [
+      phase ? phase + " market" : "Current market",
+      (volumeUsdc ?? 0) <= 0 ? "no recorded volume" : null,
+      quoteState === "cached" && ageSeconds !== null
+        ? "last quote " + Math.max(1, Math.round(ageSeconds / 60)) + "m ago"
+        : null,
+    ].filter(Boolean);
+
+    return (
+      <div className="rounded-xl border border-white/8 bg-white/[0.025] px-4 py-3">
+        <div className="text-sm font-medium text-white/60">No active price discovery</div>
+        <div className="mt-1 text-[11px] leading-5 text-white/30">
+          {parts.join(" · ")}
+        </div>
       </div>
     );
   }

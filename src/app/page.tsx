@@ -227,14 +227,14 @@ export default async function Home({ searchParams }: PageProps) {
           <section id="live" className="mt-9 rounded-3xl border border-[#20282e] bg-[#0d1216] p-5 sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Live now</div>
-                <h2 className="mt-2 text-xl font-semibold">Active Panta markets</h2>
+                <div className="text-xs uppercase tracking-[0.18em] text-white/30">Current registry</div>
+                <h2 className="mt-2 text-xl font-semibold">Current Panta markets</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
-                  Only markets that are currently in primary or secondary trading are shown here. Resolved markets are excluded from the judge-facing homepage.
+                  Current primary and secondary markets from Panta. Markets without real price discovery remain visible, but are not presented as meaningful 50/50 signals.
                 </p>
               </div>
               <span className="text-xs text-white/25">
-                {liveMarkets.length} live · public Panta registry
+                {liveMarkets.length} current · public Panta registry
               </span>
             </div>
 
