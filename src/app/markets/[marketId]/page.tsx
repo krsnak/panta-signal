@@ -72,6 +72,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     getMarketTrades(decodedMarketId, 20).catch(() => []),
     getMarketHistory(decodedMarketId, 24).catch(() => []),
   ]);
+  const recentSecondaryFills = signal?.activity24h?.secondaryCount24h ?? 0;
   const fallbackVolume = parseNumber(fallback.volume);
   const baseMarket = signal?.market ?? {
     id: decodedMarketId,
@@ -208,6 +209,8 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 marketId={resolvedMarket.id}
                 phase={marketClosed ? "closed" : resolvedMarket.phase}
                 title={resolvedMarket.title}
+                quoteAsset={resolvedMarket.quoteAsset ?? null}
+                recentSecondaryFills={recentSecondaryFills}
               />
             </div>
           </aside>

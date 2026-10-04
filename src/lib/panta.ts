@@ -92,6 +92,7 @@ type PublicRegistryEvent = {
   endTime?: string;
   isResolved?: boolean;
   isDeleted?: boolean;
+  quoteAsset?: string | null;
 };
 
 type PublicRegistryResponse = {
@@ -526,6 +527,17 @@ function mergePublicRegistryMetadata(
     description: event.description?.trim() || market.description,
     category: event.Category?.trim() || market.category,
     imageUrl: event.images?.[0] || market.imageUrl,
+    status:
+      event.status === "secondary_active"
+        ? "secondary"
+        : event.status?.trim() || market.status,
+    phase:
+      event.status === "secondary_active"
+        ? "secondary"
+        : event.status === "open" || event.status === "in_progress"
+          ? "primary"
+          : market.phase,
+    quoteAsset: event.quoteAsset?.trim().toUpperCase() || market.quoteAsset || null,
   };
 }
 
@@ -639,6 +651,7 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
           noProbability: null,
           volumeUsdc: 0,
           imageUrl: event.images?.[0] ?? null,
+          quoteAsset: event.quoteAsset?.trim().toUpperCase() || null,
         } satisfies PantaMarket;
       }
   };

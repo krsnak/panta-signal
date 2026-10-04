@@ -101,10 +101,14 @@ export default function PrimaryBuyPanel({
   marketId,
   phase,
   title,
+  quoteAsset,
+  recentSecondaryFills = 0,
 }: {
   marketId: string;
   phase: string;
   title: string;
+  quoteAsset?: string | null;
+  recentSecondaryFills?: number;
 }) {
   const { wallet, provider, error: walletError } = useSolanaWallet();
   const [side, setSide] = useState<"yes" | "no">("yes");
@@ -303,6 +307,23 @@ export default function PrimaryBuyPanel({
         <div className="text-base font-semibold text-white/80">Continue to Panta&apos;s live order book</div>
         <p className="text-sm leading-6 text-white/40">
           This market trades through Panta&apos;s secondary limit-order market. Panta Signal keeps the signal and verification layer here, then hands execution to the official Panta trading interface instead of recreating or simulating its order book.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Trade asset</div>
+            <div className="mt-1 text-sm font-semibold text-white/70">{quoteAsset || "Check on Panta"}</div>
+          </div>
+          <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5">
+            <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Recent liquidity</div>
+            <div className="mt-1 text-sm font-semibold text-white/70">
+              {recentSecondaryFills > 0
+                ? `${recentSecondaryFills} secondary fill${recentSecondaryFills === 1 ? "" : "s"} / 24h`
+                : "No recent fill confirmed"}
+            </div>
+          </div>
+        </div>
+        <p className="text-[11px] leading-5 text-white/35">
+          Recent fills show activity, not guaranteed immediate execution. Check Panta&apos;s live Order Book before placing a demo order.
         </p>
         <div className="flex flex-wrap gap-2">
           <a

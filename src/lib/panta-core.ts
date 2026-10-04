@@ -9,6 +9,7 @@ export type PantaMarket = {
   noProbability: number | null;
   volumeUsdc: number;
   imageUrl: string | null;
+  quoteAsset?: string | null;
 };
 
 export type CatalogMarket = {
