@@ -125,20 +125,20 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
 
         <section className="mt-6 grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
           <div className="overflow-hidden rounded-[28px] border border-white/10 bg-[#0b1612] shadow-2xl shadow-black/25">
-            <div className="relative aspect-[16/7.5] overflow-hidden bg-black/25">
+            <div className="relative aspect-[16/9] overflow-hidden bg-black">
               {resolvedMarket.imageUrl ? (
                 <Image
                   src={resolvedMarket.imageUrl}
                   alt=""
                   fill
                   priority
-                  className="object-cover"
+                  className="object-contain"
                   sizes="(max-width: 1024px) 100vw, 65vw"
                 />
               ) : (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(52,211,153,.18),transparent_45%)]" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#0b1612] via-[#0b1612]/10 to-transparent" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0b1612]/55 via-transparent to-transparent" />
               <div className="absolute left-5 top-5 flex gap-2">
                 <span className="rounded-full bg-black/55 px-3 py-1.5 text-xs text-white/75 backdrop-blur">{resolvedMarket.category}</span>
                 <span className="rounded-full bg-black/55 px-3 py-1.5 text-xs uppercase text-white/60 backdrop-blur">{resolvedMarket.phase}</span>

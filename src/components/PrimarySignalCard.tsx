@@ -130,15 +130,15 @@ export default function PrimarySignalCard({
         </div>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-[300px_1fr_330px]">
-        <div className="relative min-h-[220px] overflow-hidden border-b border-[#20282e] bg-[#0b0f12] lg:border-b-0 lg:border-r">
+      <div className="grid gap-0 lg:grid-cols-[360px_1fr_330px]">
+        <div className="relative aspect-[16/9] overflow-hidden border-b border-[#20282e] bg-black lg:aspect-auto lg:min-h-[250px] lg:border-b-0 lg:border-r">
           {displayImageUrl?.includes("res.cloudinary.com") ? (
             <Image
               src={displayImageUrl}
               alt={displayTitle}
               fill
-              sizes="300px"
-              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 360px"
+              className="object-contain"
               priority
             />
           ) : (
@@ -146,7 +146,8 @@ export default function PrimarySignalCard({
               <span className="text-xs uppercase tracking-[0.18em] text-white/25">Panta market</span>
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-4">
             <span className="inline-flex rounded-full bg-black/45 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/65 backdrop-blur">
               {displayCategory}
             </span>
