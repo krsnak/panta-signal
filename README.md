@@ -98,6 +98,11 @@ secondary cards also show the best current taker BUY and SELL opportunity,
 including outcome, executable price and quote asset, before the user opens
 Panta's trading interface.
 
+Secondary detail pages use the order-book reader's registry-resolved quote asset
+as the display source of truth. Solana RPC reads use one short bounded retry so
+a transient RPC failure is less likely to appear to users as unavailable
+liquidity; a genuine empty book still renders as **No immediate liquidity**.
+
 ## Trade-count verification
 
 The Manchester market showed **2 trades in the last 24h** in the Panta API.

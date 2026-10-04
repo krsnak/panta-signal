@@ -37,6 +37,7 @@ type ReaderOptions = {
   connection?: Connection;
   programId?: string;
   quoteAsset?: string;
+  rpcRetries?: number;
 };
 
 export type PantaOrderBook = {
@@ -152,28 +153,53 @@ export async function readPantaOrderBook(
         clusterApiUrl("mainnet-beta"),
       COMMITMENT,
     );
+  const rpcRetries = Math.max(0, options.rpcRetries ?? 1);
+  let snapshot:
+    | Awaited<
+        ReturnType<
+          typeof Promise.all<[
+            ReturnType<Connection["getProgramAccounts"]>,
+            ReturnType<Connection["getProgramAccounts"]>,
+            ReturnType<Connection["getSlot"]>,
+          ]>
+        >
+      >
+    | null = null;
 
-  const [orderAccounts, levelAccounts, slot] = await Promise.all([
-    connection.getProgramAccounts(program, {
-      commitment: COMMITMENT,
-      filters: filters(
-        PANTA_ORDER_NODE_SIZE,
-        ORDER_NODE_DISCRIMINATOR_BASE58,
-        PANTA_ORDER_NODE_EVENT_OFFSET,
-        normalizedMarketId,
-      ),
-    }),
-    connection.getProgramAccounts(program, {
-      commitment: COMMITMENT,
-      filters: filters(
-        PANTA_PRICE_LEVEL_SIZE,
-        PRICE_LEVEL_DISCRIMINATOR_BASE58,
-        PANTA_PRICE_LEVEL_EVENT_OFFSET,
-        normalizedMarketId,
-      ),
-    }),
-    connection.getSlot(COMMITMENT),
-  ]);
+  for (let attempt = 0; attempt <= rpcRetries; attempt += 1) {
+    try {
+      snapshot = await Promise.all([
+        connection.getProgramAccounts(program, {
+          commitment: COMMITMENT,
+          filters: filters(
+            PANTA_ORDER_NODE_SIZE,
+            ORDER_NODE_DISCRIMINATOR_BASE58,
+            PANTA_ORDER_NODE_EVENT_OFFSET,
+            normalizedMarketId,
+          ),
+        }),
+        connection.getProgramAccounts(program, {
+          commitment: COMMITMENT,
+          filters: filters(
+            PANTA_PRICE_LEVEL_SIZE,
+            PRICE_LEVEL_DISCRIMINATOR_BASE58,
+            PANTA_PRICE_LEVEL_EVENT_OFFSET,
+            normalizedMarketId,
+          ),
+        }),
+        connection.getSlot(COMMITMENT),
+      ]);
+      break;
+    } catch (error) {
+      if (attempt >= rpcRetries) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 200 * 2 ** attempt));
+    }
+  }
+
+  if (!snapshot) {
+    throw new PantaOrderBookError("Unable to read Panta order book from Solana RPC");
+  }
+  const [orderAccounts, levelAccounts, slot] = snapshot;
 
   const levels = levelAccounts.map(({ pubkey, account }) => ({
     pubkey: pubkey.toBase58(),

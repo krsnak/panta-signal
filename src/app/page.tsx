@@ -118,7 +118,7 @@ export default async function Home({ searchParams }: PageProps) {
       if (market.phase.toLowerCase() !== "secondary") return [market.id, null] as const;
       const orderBook = await readPantaOrderBook(market.id, {
         programId: PANTA_PROGRAM_ID,
-        quoteAsset: market.quoteAsset || "SOL",
+        quoteAsset: market.quoteAsset || undefined,
       }).catch(() => null);
       return [market.id, orderBook] as const;
     }),

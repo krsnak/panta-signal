@@ -114,7 +114,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     !marketClosed && resolvedMarket.phase.toLowerCase() === "secondary"
       ? await readPantaOrderBook(decodedMarketId, {
           programId: PANTA_PROGRAM_ID,
-          quoteAsset: resolvedMarket.quoteAsset || "SOL",
+          quoteAsset: resolvedMarket.quoteAsset || undefined,
         }).catch(() => null)
       : null;
   const cachedObservedAt =
@@ -217,7 +217,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 marketId={resolvedMarket.id}
                 phase={marketClosed ? "closed" : resolvedMarket.phase}
                 title={resolvedMarket.title}
-                quoteAsset={resolvedMarket.quoteAsset ?? null}
+                quoteAsset={secondaryOrderBook?.quoteAsset ?? resolvedMarket.quoteAsset ?? null}
                 recentSecondaryFills={recentSecondaryFills}
                 secondaryLiquidity={
                   resolvedMarket.phase.toLowerCase() === "secondary"
