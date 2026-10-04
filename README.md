@@ -1,12 +1,15 @@
 # Panta Signal
 
-Panta Signal is a prediction-market intelligence layer for Panta on Solana.
+Panta Signal is a Panta-native real-time signal layer on Solana.
 
-Instead of presenting another raw market dashboard, it answers three questions:
+It is designed to sit alongside Panta's existing market UI and Panta Intelligence, not replace them. Panta Intelligence provides qualitative market context; Panta Signal answers what is happening *now* and what the user can do next.
+
+It answers four questions:
 
 1. **What changed?** — current YES/NO probability and observed movement.
 2. **Is real market activity behind it?** — recent Panta trades and traded shares.
-3. **Can I verify it?** — public Solana signatures and the Panta mainnet program.
+3. **Can I act on it?** — non-custodial wallet execution on supported Panta markets.
+4. **Can I verify it?** — public Solana signatures and the Panta mainnet program.
 
 Production: https://panta-signal.vercel.app  
 Repository: https://github.com/krsnak/panta-signal
@@ -15,7 +18,9 @@ Repository: https://github.com/krsnak/panta-signal
 
 Prediction markets expose prices, but a price alone does not explain whether a market is moving, whether anyone is trading, or whether the activity is independently verifiable.
 
-Panta Signal combines live Panta market data, durable probability observations and public transaction evidence into one concise signal.
+Panta Signal combines live Panta market data, durable probability observations, public trade activity and transaction evidence into one concise workflow:
+
+`Detect -> Validate -> Trade -> Verify`
 
 ## Current judge flow
 
@@ -116,7 +121,7 @@ DATABASE_URL=...
 The same release candidate is intended for:
 
 - **SolanaCZE** — meaningful Solana integration and auditable Panta activity.
-- **Colosseum Crypto World's Fair** — a working prediction-market intelligence product built on Solana.
-- **Panta API Sidetrack** — practical use of Panta market, trade and execution APIs.
+- **Colosseum Crypto World's Fair** — a working end-user product with a clear signal-to-action use case on Solana.
+- **Panta API Sidetrack** — an ecosystem extension built around practical Panta market, trade and execution APIs.
 
 See [SUBMISSION.md](./SUBMISSION.md) and [DEMO_SCRIPT.md](./DEMO_SCRIPT.md).

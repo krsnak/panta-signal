@@ -1200,8 +1200,28 @@ Do not spend time on:
 - speculative metrics.
 - mobile-native app.
 - major framework rewrites.
+- rebuilding features that Panta already provides well, especially generic market research or a second Panta Intelligence.
 
 Optional LLM-generated summaries remain post-P0; deterministic grounded Signal Insight is sufficient for the core product.
+
+## Product positioning guardrail
+
+Panta Signal is not a separate prediction-market destination competing with Panta.
+
+It is the missing real-time layer in the Panta user journey:
+
+1. **Panta market / Panta Intelligence** — understand the market and qualitative context.
+2. **Panta Signal** — detect meaningful price/activity changes and validate them against real Panta trades.
+3. **Panta execution** — act through the official Panta flow with explicit wallet approval.
+4. **Solana** — independently verify the resulting transaction and protocol activity.
+
+All pre-submission features must strengthen at least one of the three competition framings:
+
+- **Panta Sidetrack:** deeper, useful Panta API integration.
+- **SolanaCZE:** meaningful wallet/on-chain functionality and auditable proof.
+- **Colosseum:** a coherent working product with a clear user problem and demonstrable end-to-end use case.
+
+If a feature does not strengthen one of those goals, defer it until after submission.
 
 ---
 

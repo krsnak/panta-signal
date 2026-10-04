@@ -2,15 +2,15 @@
 
 ## Core project description
 
-Panta Signal is a prediction-market intelligence layer for Panta on Solana. It turns raw market prices and public trade activity into a concise signal: what changed, whether real trading supports the move, and how to verify the activity on-chain. The app combines Panta's public market registry and API with durable probability observations and Solana transaction evidence. A non-custodial Panta quote/build/sign/submit/verify path is also implemented for primary markets, while all signing remains explicitly user-approved.
+Panta Signal is a Panta-native signal and execution companion on Solana. It is designed to complement Panta's existing market interface and Panta Intelligence rather than duplicate them. Panta Intelligence explains *why* a market may move; Panta Signal focuses on *what changed now*, whether real trading activity confirms the move, and how a user can verify or act on that signal. The app combines Panta's public market registry and API with durable probability observations, public trade activity and Solana transaction evidence. A non-custodial Panta quote/build/sign/submit/verify path is implemented for supported primary markets, while all signing remains explicitly user-approved.
 
 ## Problem
 
-Prediction-market interfaces show prices, but a price alone does not tell a user whether the market is actually moving, whether trading activity is present, or whether that activity can be independently audited.
+Panta already provides market discovery, pricing, trading and qualitative market research through Panta Intelligence. What is missing is a concise real-time layer that answers whether anything meaningful is changing *now*, whether trading activity supports that move, and whether the evidence can be independently verified.
 
 ## Solution
 
-Panta Signal adds an intelligence and provenance layer:
+Panta Signal adds a complementary signal, provenance and action layer:
 
 - discover current Panta markets,
 - show live YES/NO probability,
@@ -18,7 +18,7 @@ Panta Signal adds an intelligence and provenance layer:
 - summarize recent public trade activity,
 - link transaction signatures to Solana Explorer,
 - expose the Panta mainnet program,
-- preserve an optional non-custodial execution path.
+- move from a validated signal into a non-custodial Panta execution path when the market type is supported.
 
 ## Why Solana matters
 
@@ -29,15 +29,31 @@ Panta program:
 
 ## SolanaCZE framing
 
-Panta Signal demonstrates a practical Czech-built Solana application where blockchain activity is part of the product's trust model. A user can move from a market signal to real Panta activity and independently verify the transaction and executable Panta program on Solana. The same product also contains a non-custodial transaction path for primary Panta markets.
+Panta Signal demonstrates a practical Czech-built Solana product where on-chain activity is part of the user journey, not decorative infrastructure. A user can move from a live Panta signal to wallet-approved execution and independently verify the resulting transaction and Panta program on Solana.
 
 ## Colosseum framing
 
-Panta Signal makes prediction-market data easier to understand and audit. Instead of duplicating a market dashboard, it combines market discovery, deterministic movement signals, trade activity and on-chain evidence into one product. It is deployed, uses live Panta data, stores durable observations and exposes verifiable Solana activity.
+Panta Signal extends an existing prediction-market product with a clear new use case: real-time signal detection, activity validation, wallet action and on-chain verification. It does not attempt to rebuild Panta or create another generic dashboard. The release candidate is deployed, uses live Panta data, stores durable observations and exposes verifiable Solana activity.
 
 ## Panta API Sidetrack framing
 
-Panta Signal is built around practical Panta API usage: market discovery, canonical market detail, live probability, trade activity, positions and primary-order quote/build/submit/verify. The project adds a durable intelligence layer while preserving Panta as the source of truth for current market and execution data.
+Panta Signal is built around practical Panta API usage: market discovery, canonical market detail, live probability, trade activity, positions and primary-order quote/build/submit/verify. The added value is the signal layer between Panta Intelligence and trading: detect a meaningful change, validate it against Panta activity, act through Panta, and verify the result on Solana. Panta remains the source of truth for current market and execution data.
+
+## Product positioning guardrail
+
+Panta Signal must remain a **Panta ecosystem companion**, not a standalone prediction-market clone.
+
+The intended workflow is:
+
+`Panta market context / Intelligence -> Panta Signal -> Panta trade -> Solana verification`
+
+The product should therefore prioritize:
+
+- meaningful signal detection over generic market browsing,
+- real Panta activity over synthetic AI commentary,
+- Panta-native execution over a custom trading protocol,
+- Solana verification over decorative blockchain branding,
+- one release candidate that can be framed appropriately for all three competitions.
 
 ## Links
 

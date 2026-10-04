@@ -131,24 +131,24 @@ export default async function Home({ searchParams }: PageProps) {
           <div className="relative grid gap-8 lg:grid-cols-[1.45fr_.75fr] lg:items-end">
             <div>
               <div className="mb-4 inline-flex rounded-full border border-emerald-300/20 bg-emerald-300/[0.06] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200/85">
-                Panta intelligence layer on Solana
+                Panta-native signal layer on Solana
               </div>
               <div className="text-5xl font-semibold tracking-[-0.045em] sm:text-6xl lg:text-7xl">
                 Panta Signal
               </div>
               <h1 className="mt-5 max-w-4xl text-2xl font-semibold leading-tight tracking-tight sm:text-3xl lg:text-4xl">
-                Turn live prediction markets into clear, verifiable signals.
+                From market context to verifiable action.
               </h1>
               <p className="mt-3 max-w-3xl text-sm leading-6 text-white/50 sm:text-base">
-                We detect what changed, check whether public trading activity supports it, and link the evidence back to Solana.
+                Panta Intelligence explains the market. Panta Signal adds the live layer: what changed, whether trading confirms it, and how to verify or act on it.
               </p>
             </div>
             <div className="grid gap-2.5 text-sm">
               {[
-                ["1", "Detect change", "Live YES/NO probability and movement"],
-                ["2", "Validate activity", `Public trades + ${signalCoverage.observations} stored observations`],
-                ["3", "Verify on Solana", "Open real transaction evidence"],
-                ["4", "Trade with your wallet", "Buy YES or NO on supported primary markets"],
+                ["1", "Detect", "Meaningful YES/NO movement, not just a raw price"],
+                ["2", "Validate", `Public trades + ${signalCoverage.observations} stored observations`],
+                ["3", "Trade", "Act with Phantom on supported Panta markets"],
+                ["4", "Verify", "Follow the resulting activity back to Solana"],
               ].map(([step, title, description]) => (
                 <div key={step} className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 backdrop-blur-sm">
                   <div className="flex items-center gap-3">
