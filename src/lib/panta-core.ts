@@ -10,6 +10,8 @@ export type PantaMarket = {
   volumeUsdc: number;
   imageUrl: string | null;
   quoteAsset?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
 };
 
 export type CatalogMarket = {

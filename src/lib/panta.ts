@@ -84,6 +84,7 @@ const PUBLIC_REGISTRY_URL = "https://production-api.balr.fun/api/v1/events";
 
 type PublicRegistryEvent = {
   eventPda?: string;
+  startTime?: string;
   status?: string;
   Category?: string;
   title?: string | null;
@@ -521,6 +522,13 @@ function mergePublicRegistryMetadata(
   event: PublicRegistryEvent | null,
 ): PantaMarket {
   if (!event) return market;
+  const now = Date.now();
+  const startAt = event.startTime ? Date.parse(event.startTime) : null;
+  const endAt = event.endTime ? Date.parse(event.endTime) : null;
+  const primaryWindowClosed =
+    (event.status === "open" || event.status === "in_progress") &&
+    ((startAt !== null && Number.isFinite(startAt) && startAt > now) ||
+      (endAt !== null && Number.isFinite(endAt) && endAt <= now));
   return {
     ...market,
     title: event.title?.trim() || market.title,
@@ -535,9 +543,13 @@ function mergePublicRegistryMetadata(
       event.status === "secondary_active"
         ? "secondary"
         : event.status === "open" || event.status === "in_progress"
-          ? "primary"
+          ? primaryWindowClosed
+            ? "scheduled"
+            : "primary"
           : market.phase,
     quoteAsset: event.quoteAsset?.trim().toUpperCase() || market.quoteAsset || null,
+    startTime: event.startTime || market.startTime || null,
+    endTime: event.endTime || market.endTime || null,
   };
 }
 
@@ -598,12 +610,16 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
 
   const registryRows = (body.data ?? [])
     .filter((event) => {
+      const startAt = event.startTime ? Date.parse(event.startTime) : Number.NEGATIVE_INFINITY;
       const endAt = event.endTime ? Date.parse(event.endTime) : Number.POSITIVE_INFINITY;
+      const status = event.status?.trim() || "";
+      const isPrimaryStatus = status === "open" || status === "in_progress";
       return (
         Boolean(event.eventPda?.trim()) &&
         !event.isDeleted &&
         !event.isResolved &&
-        activeStatuses.has(event.status?.trim() || "") &&
+        activeStatuses.has(status) &&
+        (!isPrimaryStatus || !Number.isFinite(startAt) || startAt <= now) &&
         (!Number.isFinite(endAt) || endAt > now)
       );
     })
@@ -652,6 +668,8 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
           volumeUsdc: 0,
           imageUrl: event.images?.[0] ?? null,
           quoteAsset: event.quoteAsset?.trim().toUpperCase() || null,
+          startTime: event.startTime || null,
+          endTime: event.endTime || null,
         } satisfies PantaMarket;
       }
   };

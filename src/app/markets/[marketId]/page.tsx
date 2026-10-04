@@ -219,6 +219,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 title={resolvedMarket.title}
                 quoteAsset={secondaryOrderBook?.quoteAsset ?? resolvedMarket.quoteAsset ?? null}
                 recentSecondaryFills={recentSecondaryFills}
+                primaryStartTime={resolvedMarket.startTime ?? null}
                 secondaryLiquidity={
                   resolvedMarket.phase.toLowerCase() === "secondary"
                     ? secondaryOrderBook

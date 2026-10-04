@@ -104,12 +104,14 @@ export default function PrimaryBuyPanel({
   quoteAsset,
   recentSecondaryFills = 0,
   secondaryLiquidity = null,
+  primaryStartTime = null,
 }: {
   marketId: string;
   phase: string;
   title: string;
   quoteAsset?: string | null;
   recentSecondaryFills?: number;
+  primaryStartTime?: string | null;
   secondaryLiquidity?: {
     activeOrders: number;
     buyOpportunities: number;
@@ -177,8 +179,11 @@ export default function PrimaryBuyPanel({
     } catch (error) {
       setQuote(null);
       setOrder(null);
-      if (error instanceof ApiError && error.code === "INVALID_MARKET_PARAMS") {
-        setStatus("Panta could not prepare this trade for the current wallet/market. Nothing was signed or sent.");
+      if (
+        error instanceof ApiError &&
+        (error.code === "INVALID_MARKET_PARAMS" || error.code === "MARKET_NOT_IN_PRIMARY")
+      ) {
+        setStatus("Panta is not accepting primary orders for this market right now. Nothing was signed or sent.");
       } else {
         setStatus(error instanceof Error ? error.message : "Unable to prepare trade.");
       }
@@ -372,6 +377,22 @@ export default function PrimaryBuyPanel({
     );
   }
 
+  if (phase === "scheduled") {
+    const startsAt = primaryStartTime
+      ? new Date(primaryStartTime).toLocaleString("en-GB")
+      : null;
+    return (
+      <div className="space-y-3 rounded-2xl border border-amber-300/15 bg-amber-300/[0.04] p-5">
+        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-100/55">Primary market</div>
+        <div className="text-base font-semibold text-white/80">Primary trading is not open yet.</div>
+        <p className="text-sm leading-6 text-white/45">
+          Panta lists this market in the registry, but its trading window is not active, so Panta Signal will not offer a Review action.
+        </p>
+        {startsAt && <div className="text-xs text-white/35">Scheduled start: {startsAt}</div>}
+      </div>
+    );
+  }
+
   if (phase !== "primary") {
     return (
       <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-5">
@@ -383,6 +404,7 @@ export default function PrimaryBuyPanel({
       </div>
     );
   }
+
 
   return (
     <div className="space-y-4">

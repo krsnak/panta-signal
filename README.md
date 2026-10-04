@@ -103,6 +103,11 @@ as the display source of truth. Solana RPC reads use one short bounded retry so
 a transient RPC failure is less likely to appear to users as unavailable
 liquidity; a genuine empty book still renders as **No immediate liquidity**.
 
+Primary execution is only exposed when the registry trading window is active.
+An `open` registry status alone is not treated as executable: future-start
+markets are shown as scheduled instead of presenting a Review button that the
+Panta primary-order API will reject.
+
 ## Trade-count verification
 
 The Manchester market showed **2 trades in the last 24h** in the Panta API.
