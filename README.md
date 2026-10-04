@@ -86,6 +86,12 @@ Current limitations:
 - The current Panta client uses 9 share decimals for SOL books and 6 for USDC books, while secondary prices use a 9-decimal fixed-point scale for both. Other quote assets are rejected rather than guessed.
 - The decoder is tied to the current public Anchor IDL account discriminators and exact account sizes (269-byte `OrderNode`, 218-byte `PriceLevel`). A program layout upgrade requires updating and retesting the decoder.
 
+The production UI now uses the same read-only on-chain reader to distinguish
+**Tradeable now** from **No immediate liquidity** on secondary markets. This is
+kept separate from 24h fill activity: recent trades do not guarantee an
+executable counterparty now, and a resting live order can exist without a
+recent completed fill.
+
 ## Trade-count verification
 
 The Manchester market showed **2 trades in the last 24h** in the Panta API.

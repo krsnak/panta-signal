@@ -103,12 +103,18 @@ export default function PrimaryBuyPanel({
   title,
   quoteAsset,
   recentSecondaryFills = 0,
+  secondaryLiquidity = null,
 }: {
   marketId: string;
   phase: string;
   title: string;
   quoteAsset?: string | null;
   recentSecondaryFills?: number;
+  secondaryLiquidity?: {
+    activeOrders: number;
+    buyOpportunities: number;
+    sellOpportunities: number;
+  } | null;
 }) {
   const { wallet, provider, error: walletError } = useSolanaWallet();
   const [side, setSide] = useState<"yes" | "no">("yes");
@@ -301,6 +307,7 @@ export default function PrimaryBuyPanel({
         : 0;
 
   if (phase === "secondary") {
+    const hasImmediateLiquidity = (secondaryLiquidity?.activeOrders ?? 0) > 0;
     return (
       <div className="space-y-3 rounded-2xl border border-white/10 bg-black/15 p-5">
         <div className="text-xs font-semibold uppercase tracking-[0.16em] text-white/30">Secondary market</div>
@@ -313,17 +320,40 @@ export default function PrimaryBuyPanel({
             <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Trade asset</div>
             <div className="mt-1 text-sm font-semibold text-white/70">{quoteAsset || "Check on Panta"}</div>
           </div>
-          <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5">
-            <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Recent liquidity</div>
-            <div className="mt-1 text-sm font-semibold text-white/70">
-              {recentSecondaryFills > 0
-                ? `${recentSecondaryFills} secondary fill${recentSecondaryFills === 1 ? "" : "s"} / 24h`
-                : "No recent fill confirmed"}
+          <div className={`rounded-xl border px-3 py-2.5 ${
+            secondaryLiquidity === null
+              ? "border-white/8 bg-white/[0.03]"
+              : hasImmediateLiquidity
+                ? "border-emerald-300/20 bg-emerald-300/[0.06]"
+                : "border-amber-300/20 bg-amber-300/[0.05]"
+          }`}>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-white/30">Immediate liquidity</div>
+            <div className={`mt-1 text-sm font-semibold ${
+              secondaryLiquidity === null
+                ? "text-white/55"
+                : hasImmediateLiquidity
+                  ? "text-emerald-200"
+                  : "text-amber-100/80"
+            }`}>
+              {secondaryLiquidity === null
+                ? "On-chain check unavailable"
+                : hasImmediateLiquidity
+                  ? "Tradeable now"
+                  : "No immediate counterparty"}
             </div>
+            {secondaryLiquidity && (
+              <div className="mt-1 text-[11px] text-white/35">
+                Buy {secondaryLiquidity.buyOpportunities} · Sell {secondaryLiquidity.sellOpportunities}
+              </div>
+            )}
           </div>
         </div>
         <p className="text-[11px] leading-5 text-white/35">
-          Recent fills show activity, not guaranteed immediate execution. Check Panta&apos;s live Order Book before placing a demo order.
+          {secondaryLiquidity === null
+            ? "Panta Signal could not verify the live order book on-chain right now. Check Panta before placing a demo order."
+            : hasImmediateLiquidity
+              ? `Live Panta OrderNode accounts show executable counterparties now. ${recentSecondaryFills > 0 ? `${recentSecondaryFills} secondary fill${recentSecondaryFills === 1 ? "" : "s"} also appeared in the last 24h.` : "No completed secondary fill was confirmed in the last 24h."}`
+              : `No executable counterparty is visible on-chain now. A new limit order can still be placed on Panta, but it may rest unfilled. ${recentSecondaryFills > 0 ? `${recentSecondaryFills} secondary fill${recentSecondaryFills === 1 ? "" : "s"} appeared in the last 24h.` : ""}`}
         </p>
         <div className="flex flex-wrap gap-2">
           <a
@@ -332,7 +362,7 @@ export default function PrimaryBuyPanel({
             rel="noreferrer"
             className="inline-flex items-center justify-center rounded-xl bg-emerald-300 px-4 py-2.5 text-sm font-semibold text-[#07110d] transition hover:bg-emerald-200"
           >
-            Trade on Panta ↗
+            {hasImmediateLiquidity ? "Open live orders on Panta ↗" : "Open Panta order book ↗"}
           </a>
         </div>
         <div className="text-[11px] leading-5 text-white/30">

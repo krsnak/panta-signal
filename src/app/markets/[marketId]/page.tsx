@@ -10,6 +10,7 @@ import {
 import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import { isClosedMarketStatus } from "@/lib/panta-core";
+import { PANTA_PROGRAM_ID, readPantaOrderBook } from "@/lib/panta-orderbook";
 
 type PageProps = {
   params: Promise<{ marketId: string }>;
@@ -109,6 +110,13 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   const displayQuoteState = marketClosed ? "resolved" : quoteState;
   const quoteAvailable =
     resolvedMarket.yesProbability !== null && resolvedMarket.noProbability !== null;
+  const secondaryOrderBook =
+    !marketClosed && resolvedMarket.phase.toLowerCase() === "secondary"
+      ? await readPantaOrderBook(decodedMarketId, {
+          programId: PANTA_PROGRAM_ID,
+          quoteAsset: resolvedMarket.quoteAsset || "SOL",
+        }).catch(() => null)
+      : null;
   const cachedObservedAt =
     quoteState === "cached" && signal?.current.observedAt
       ? new Date(signal.current.observedAt).toLocaleTimeString("en-GB", {
@@ -211,6 +219,17 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 title={resolvedMarket.title}
                 quoteAsset={resolvedMarket.quoteAsset ?? null}
                 recentSecondaryFills={recentSecondaryFills}
+                secondaryLiquidity={
+                  resolvedMarket.phase.toLowerCase() === "secondary"
+                    ? secondaryOrderBook
+                      ? {
+                          activeOrders: secondaryOrderBook.counts.activeOrders,
+                          buyOpportunities: secondaryOrderBook.counts.buyOpportunities,
+                          sellOpportunities: secondaryOrderBook.counts.sellOpportunities,
+                        }
+                      : null
+                    : null
+                }
               />
             </div>
           </aside>

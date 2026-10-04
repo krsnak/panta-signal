@@ -10,6 +10,7 @@ import PrimarySignalCard from "@/components/PrimarySignalCard";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import { getCanonicalSignalFeed } from "@/lib/signal-service";
 import { isRelevantMarket } from "@/lib/panta-core";
+import { PANTA_PROGRAM_ID, readPantaOrderBook } from "@/lib/panta-orderbook";
 
 type PageProps = {
   searchParams: Promise<{
@@ -96,6 +97,17 @@ export default async function Home({ searchParams }: PageProps) {
         : judgeFacingMarkets.slice(0, 6)
       : [];
   const liveMarkets = visibleMarkets;
+  const secondaryLiquidityResults = await Promise.all(
+    liveMarkets.map(async (market) => {
+      if (market.phase.toLowerCase() !== "secondary") return [market.id, null] as const;
+      const orderBook = await readPantaOrderBook(market.id, {
+        programId: PANTA_PROGRAM_ID,
+        quoteAsset: market.quoteAsset || "SOL",
+      }).catch(() => null);
+      return [market.id, orderBook] as const;
+    }),
+  );
+  const secondaryLiquidity = new Map(secondaryLiquidityResults);
   const primarySignalMarket = canonicalFeed.signals[0]?.market ?? null;
 
   return (
@@ -263,6 +275,21 @@ export default async function Home({ searchParams }: PageProps) {
                     <span className="absolute left-4 top-4 rounded-full bg-black/55 px-2.5 py-1 text-xs text-white/70 backdrop-blur">
                       {market.category}
                     </span>
+                    {market.phase.toLowerCase() === "secondary" && (
+                      <span className={`absolute right-4 top-4 rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${
+                        secondaryLiquidity.get(market.id) === null
+                          ? "border-white/10 bg-black/55 text-white/45"
+                          : (secondaryLiquidity.get(market.id)?.counts.activeOrders ?? 0) > 0
+                            ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100"
+                            : "border-amber-300/20 bg-amber-300/10 text-amber-100/80"
+                      }`}>
+                        {secondaryLiquidity.get(market.id) === null
+                          ? "Liquidity unavailable"
+                          : (secondaryLiquidity.get(market.id)?.counts.activeOrders ?? 0) > 0
+                            ? `Tradeable now · ${secondaryLiquidity.get(market.id)?.counts.activeOrders} orders`
+                            : "No immediate liquidity"}
+                      </span>
+                    )}
                   </div>
                   <div className="p-5">
                     <h3 className="min-h-[3.5rem] text-base font-medium leading-6 text-white/85">
