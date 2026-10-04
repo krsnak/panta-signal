@@ -1,5 +1,17 @@
 # Panta Signal — Feature-by-feature delivery
 
+## Execution-flow alignment — 2026-10-04
+
+- Panta-native secondary execution is now the preferred demo path:
+  - Panta Signal detects/validates the market signal,
+  - secondary markets deep-link to the exact official Panta market,
+  - authentication, embedded wallet and order-book execution stay inside Panta,
+  - the resulting public activity is then verified from Panta Signal / Solana evidence.
+- External wallet branding is now generic **Solana wallet** in Panta Signal; Phantom remains the currently supported provider for direct primary execution.
+- Secondary-market cards no longer ask users to connect Phantom inside Panta Signal before handing off to Panta.
+- The demo no longer depends on a primary market being available.
+- Direct primary quote/build/sign/submit/verify remains a complementary integration and still requires explicit wallet approval.
+
 ## Delivery rule
 
 From 2026-10-02 onward, Panta Signal is developed **one user-facing function at a time**.

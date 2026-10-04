@@ -2,7 +2,7 @@
 
 ## Core project description
 
-Panta Signal is a Panta-native signal and execution companion on Solana. It is designed to complement Panta's existing market interface and Panta Intelligence rather than duplicate them. Panta Intelligence explains *why* a market may move; Panta Signal focuses on *what changed now*, whether real trading activity confirms the move, and how a user can verify or act on that signal. The app combines Panta's public market registry and API with durable probability observations, public trade activity and Solana transaction evidence. A non-custodial Panta quote/build/sign/submit/verify path is implemented for supported primary markets, while all signing remains explicitly user-approved.
+Panta Signal is a Panta-native signal and execution companion on Solana. It is designed to complement Panta's existing market interface and Panta Intelligence rather than duplicate them. Panta Intelligence explains *why* a market may move; Panta Signal focuses on *what changed now*, whether real trading activity confirms the move, and how a user can verify or act on that signal. The app combines Panta's public market registry and API with durable probability observations, public trade activity and Solana transaction evidence. Secondary execution stays inside Panta's official Email Login / embedded-wallet / order-book flow, while supported primary markets can use Panta's non-custodial quote/build/sign/submit/verify API path with an external Solana wallet.
 
 ## Problem
 
@@ -22,14 +22,14 @@ Panta Signal adds a complementary signal, provenance and action layer:
 
 ## Why Solana matters
 
-Public Panta transactions and the Panta program are directly exposed as verification evidence. The execution workflow also compiles Panta-provided instructions into a Solana VersionedTransaction and requires explicit wallet approval before broadcast.
+Public Panta transactions and the Panta program are directly exposed as verification evidence. The preferred demo executes through Panta's native secondary-market flow and then verifies the resulting public Solana activity. The direct primary execution workflow additionally compiles Panta-provided instructions into a Solana VersionedTransaction and requires explicit wallet approval before broadcast.
 
 Panta program:
 `6gM5afTQBq5VZCfgpGqcsqzfWd5maLSCKWtGjbEobZMp`
 
 ## SolanaCZE framing
 
-Panta Signal demonstrates a practical Czech-built Solana product where on-chain activity is part of the user journey, not decorative infrastructure. A user can move from a live Panta signal to wallet-approved execution and independently verify the resulting transaction and Panta program on Solana.
+Panta Signal demonstrates a practical Czech-built Solana product where on-chain activity is part of the user journey, not decorative infrastructure. A user can move from a live Panta signal to Panta-native wallet-backed execution and independently verify the resulting transaction and Panta program on Solana. The login abstraction does not change the underlying Solana transaction proof.
 
 ## Colosseum framing
 
@@ -37,7 +37,7 @@ Panta Signal extends an existing prediction-market product with a clear new use 
 
 ## Panta API Sidetrack framing
 
-Panta Signal is built around practical Panta API usage: market discovery, canonical market detail, live probability, trade activity, positions and primary-order quote/build/submit/verify. The added value is the signal layer between Panta Intelligence and trading: detect a meaningful change, validate it against Panta activity, act through Panta, and verify the result on Solana. Primary execution is available directly in Panta Signal; secondary markets hand off to Panta's official live order book rather than duplicating its trading engine. Panta remains the source of truth for current market and execution data.
+Panta Signal is built around practical Panta API usage: market discovery, canonical market detail, live probability, trade activity, positions and primary-order quote/build/submit/verify. The added value is the signal layer between Panta Intelligence and trading: detect a meaningful change, validate it against Panta activity, act through Panta, and verify the result on Solana. Primary execution is available directly in Panta Signal through an external Solana wallet; secondary markets hand off to Panta's official Email Login, embedded wallet and live order book rather than duplicating its trading engine. Panta remains the source of truth for current market and execution data.
 
 ## Product positioning guardrail
 

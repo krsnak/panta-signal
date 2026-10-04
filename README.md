@@ -24,11 +24,11 @@ Panta Signal combines live Panta market data, durable probability observations, 
 
 ## Current judge flow
 
-- Open the homepage and see one primary market signal.
+- Open the homepage and see a meaningful Panta signal when one exists.
 - Read the current probability, observed movement and 24h trade activity.
 - Open the market detail for provenance and recent trades.
-- Follow a transaction signature to Solana Explorer.
-- Follow the Panta program link to the executable Solana mainnet program.
+- For a secondary market, continue into Panta's official Email Login / embedded-wallet / order-book flow.
+- Return to the public activity evidence and follow the resulting transaction signature to Solana Explorer.
 
 The homepage only shows active markets with a canonical human-readable title. Resolved, cancelled and metadata-incomplete rows are not used as judge-facing showcase cards.
 
@@ -80,7 +80,7 @@ A non-custodial primary-order path is implemented:
 
 The application never requests or stores a seed phrase or private key. No mainnet transaction is automatically signed or broadcast.
 
-Secondary markets use Panta's live limit-order interface. Panta Signal deliberately hands those markets to the official Panta market page rather than reimplementing or simulating Panta's order book. This keeps execution Panta-native while preserving Panta Signal's role as the signal, validation and verification layer.
+Secondary markets use Panta's live limit-order interface and native Email Login / embedded Solana wallet flow. Panta Signal deliberately hands those markets to the official Panta market page rather than reimplementing or simulating Panta's authentication, wallet or order book. This keeps execution Panta-native while preserving Panta Signal's role as the signal, validation and verification layer.
 
 ## Stack
 
@@ -88,7 +88,7 @@ Secondary markets use Panta's live limit-order interface. Panta Signal deliberat
 - Tailwind CSS
 - Panta API + public event registry
 - Solana Web3.js
-- Phantom-compatible wallet provider
+- External Solana wallet provider for direct primary execution (Phantom currently supported)
 - Neon/Postgres
 - Vercel
 

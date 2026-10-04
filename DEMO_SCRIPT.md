@@ -1,31 +1,39 @@
 # Panta Signal — 60–90 Second Demo
 
-The demo can be recorded without spoken English. Use these English captions on screen.
+The demo can be recorded without spoken English. Use short English captions on screen.
 
-## 0–8s — Problem
+## Core story
 
-Show the homepage hero.
+`Panta context -> Detect -> Validate -> Trade on Panta -> Verify on Solana`
+
+The preferred recording uses a **real secondary-market trade through Panta's native Email Login / embedded-wallet flow**. Panta Signal does not impersonate Panta's login or order book.
+
+## 0–8s — Context
+
+Show a Panta market with **Panta Intelligence** visible, then switch to Panta Signal.
 
 Caption:
 
-**Prediction markets show a price. Panta Signal shows what changed, whether real trading supports it, and how to verify the activity on Solana.**
+**Panta Intelligence explains the market. Panta Signal shows what is changing now.**
 
-## 8–25s — Signal
+## 8–25s — Detect + validate
 
 Show the featured Signal Feed card.
 
 Point at:
 
-- current YES / NO probability,
-- price movement,
+- current YES / NO price,
+- meaningful movement if available,
 - 24h trades,
-- market volume.
+- market volume / freshness.
 
 Caption:
 
-**Live Panta data + durable observations + recent public trading activity.**
+**Live Panta data + durable observations + real public trading activity.**
 
-## 25–40s — Market detail
+If there is no meaningful signal, do not fake one. Use an active secondary market and show the market-detail signal/activity instead.
+
+## 25–38s — Market detail
 
 Open **Inspect signal**.
 
@@ -33,54 +41,77 @@ Show:
 
 - Evidence sources,
 - observed signal,
-- recent trades.
+- recent Panta trades,
+- Solana signatures.
 
 Caption:
 
-**The signal is deterministic. We do not invent historical probability points.**
+**The signal is evidence-backed. No synthetic price history or fake activity.**
 
-## 40–55s — Solana proof
+## 38–55s — Trade through Panta
 
-Open one recent trade in Solana Explorer.
+For a secondary market click **Trade on Panta**.
 
-Caption:
+On panta.market:
 
-**Public Panta activity can be independently verified on Solana.**
-
-Do not dwell on the Accounts list. The important proof is the transaction signature and Panta instruction/log.
-
-## 55–65s — Panta program
-
-Return to the homepage and click **Panta program 6gM5…bZMp**.
+1. use Panta's native **Email Login** if authentication is required,
+2. use the embedded Solana wallet created/managed by Panta's native flow,
+3. choose YES or NO,
+4. place a small real order only after explicit approval,
+5. show Panta's confirmation.
 
 Caption:
 
-**Panta Signal also links the executable Panta mainnet program.**
+**Execution stays Panta-native: official login, wallet and order book.**
 
-## 65–80s — Market discovery
+Do not expose email codes, recovery details, seed phrases, private keys or unrelated wallet balances.
 
-Return to Panta Signal and scroll to Active Panta markets.
+## 55–72s — Verify the result
 
-Caption:
+Return to Panta Signal after the trade.
 
-**Discovery follows Panta's public event registry and only surfaces active markets with reliable metadata.**
+Refresh the same market/activity view and show the new public trade if Panta indexing has completed.
 
-## 80–90s — Close
-
-Show homepage.
+Then open its Solana transaction.
 
 Caption:
 
-**Panta Signal — prediction-market intelligence with verifiable Solana evidence.**
+**The resulting Panta activity is independently verifiable on Solana.**
+
+If Panta's public indexer has not surfaced the trade yet, show the confirmed transaction on Solana and state that indexer propagation is pending. Do not claim the trade is in Panta Signal until it actually appears.
+
+## 72–82s — Optional primary proof
+
+Only if a suitable primary market exists during recording:
+
+- connect an external Solana wallet,
+- show the direct Panta quote/build flow,
+- stop before signing unless a second real trade is explicitly desired.
+
+Caption:
+
+**Primary markets can also use direct non-custodial Solana wallet execution.**
+
+This is optional. The main competition demo does not depend on a primary market being available.
+
+## 82–90s — Close
+
+Show the homepage hero.
+
+Caption:
+
+**Panta Signal — Detect. Validate. Trade. Verify.**
 
 Optional final caption:
 
-**Built for Colosseum + SolanaCZE. Powered by Panta.**
+**Built for Panta API Sidetrack + SolanaCZE + Colosseum.**
 
 ## Recording rules
 
 - Record at production URL: https://panta-signal.vercel.app
-- Do not show environment variables or API keys.
-- Do not trigger a real wallet transaction unless explicitly approved beforehand.
+- Use Panta's official secondary-market UI for the real demo trade.
+- Prefer a small amount that Panta accepts; do not force exactly $1 if the market/order minimum differs.
+- Never show environment variables, API keys, email verification codes, seed phrases or private keys.
+- A real transaction must always require explicit user approval.
 - Keep the recording under 90 seconds if possible.
 - Prefer cursor movement and captions over narration.

@@ -163,7 +163,7 @@ export default function PrimaryBuyPanel({
         });
       }
       setOrder(result);
-      setStatus("Trade prepared. Review the final transfers in Phantom before confirming.");
+      setStatus("Trade prepared. Review the final transfers in your Solana wallet before confirming.");
     } catch (error) {
       setQuote(null);
       setOrder(null);
@@ -181,7 +181,7 @@ export default function PrimaryBuyPanel({
     if (!order || !wallet) return;
     if (!provider) return setStatus("Solana wallet is no longer available.");
     if (provider.isConnected === false) {
-      return setStatus("Wallet is disconnected. Reconnect Phantom before signing.");
+      return setStatus("Wallet is disconnected. Reconnect your Solana wallet before signing.");
     }
     const activeWallet = provider.publicKey?.toString() ?? "";
     if (!activeWallet || activeWallet !== wallet) {
@@ -313,10 +313,9 @@ export default function PrimaryBuyPanel({
           >
             Trade on Panta ↗
           </a>
-          <WalletConnectButton />
         </div>
         <div className="text-[11px] leading-5 text-white/30">
-          Secondary execution remains Panta-native. No custom order-book logic or synthetic fill is introduced by Panta Signal.
+          Secondary execution remains Panta-native and uses Panta&apos;s own login, embedded wallet and order book. No custom order-book logic or synthetic fill is introduced by Panta Signal.
         </div>
       </div>
     );
@@ -356,7 +355,7 @@ export default function PrimaryBuyPanel({
           <div className="text-sm uppercase tracking-[0.18em] text-white/35">Primary market · non-custodial</div>
           <h2 className="mt-2 text-2xl font-semibold">Buy YES / NO on Panta</h2>
           <p className="mt-2 max-w-2xl text-xs leading-5 text-white/40">
-            Primary-market purchases use USDC on Solana. Your wallet remains under your control and must approve every transaction before anything is broadcast.
+            Primary-market purchases can be executed directly with an external Solana wallet. Phantom is currently supported. Panta&apos;s native secondary trading remains in the official Panta interface.
           </p>
         </div>
         <WalletConnectButton />
@@ -413,7 +412,7 @@ export default function PrimaryBuyPanel({
               onClick={() => void signAndSubmit()}
               className="mt-5 w-full rounded-xl bg-white px-5 py-3 text-sm font-semibold text-[#07110d] disabled:opacity-40"
             >
-              Review & confirm in Phantom
+              Review & confirm in wallet
             </button>
           )}
         </div>

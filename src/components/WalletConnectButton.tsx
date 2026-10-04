@@ -61,7 +61,7 @@ export default function WalletConnectButton({ compact = false }: { compact?: boo
           className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs font-medium text-emerald-200 transition hover:bg-emerald-300/[0.14]"
         >
           <span className="h-2 w-2 rounded-full bg-emerald-300" />
-          Phantom {wallet.slice(0, 4)}…{wallet.slice(-4)}
+          Solana wallet {wallet.slice(0, 4)}…{wallet.slice(-4)}
         </button>
         {open && (
           <div
@@ -69,11 +69,11 @@ export default function WalletConnectButton({ compact = false }: { compact?: boo
             className="absolute right-0 z-50 mt-2 w-[270px] rounded-2xl border border-white/10 bg-[#10161a] p-3 shadow-2xl shadow-black/40"
           >
             <div className="px-2 pb-2">
-              <div className="text-xs font-semibold text-white/80">Connected with Phantom</div>
+              <div className="text-xs font-semibold text-white/80">Connected Solana wallet</div>
               <div className="mt-1 break-all font-mono text-[10px] leading-4 text-white/35">{wallet}</div>
             </div>
             <div className="rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2.5 text-[11px] leading-4 text-white/45">
-              Phantom may reconnect this trusted site without another connection prompt. Every transaction still requires a separate wallet approval.
+              External wallet connection is used only for direct wallet execution. Every transaction still requires a separate wallet approval.
             </div>
             <button
               type="button"
@@ -88,7 +88,7 @@ export default function WalletConnectButton({ compact = false }: { compact?: boo
               {disconnecting ? "Disconnecting…" : "Disconnect this session"}
             </button>
             <p className="mt-2 px-2 text-[10px] leading-4 text-white/30">
-              To require a new connection approval later, revoke this site from Phantom&apos;s connected/trusted apps settings.
+              Phantom is the currently supported external wallet provider. Panta&apos;s native trading flow uses its own email/embedded-wallet login.
             </p>
           </div>
         )}
@@ -111,11 +111,11 @@ export default function WalletConnectButton({ compact = false }: { compact?: boo
           : !available && isMobileBrowser()
             ? "Open in Phantom"
             : compact
-              ? "Connect Phantom"
-              : "Connect Phantom wallet"}
+              ? "Connect Solana wallet"
+              : "Connect Solana wallet"}
       </button>
       {!available && !isMobileBrowser() && error && (
-        <span className="hidden text-[10px] text-amber-200/60 lg:inline">Phantom not detected</span>
+        <span className="hidden text-[10px] text-amber-200/60 lg:inline">External wallet not detected</span>
       )}
     </div>
   );

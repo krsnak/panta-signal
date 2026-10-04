@@ -1226,7 +1226,8 @@ If a feature does not strengthen one of those goals, defer it until after submis
 Secondary-market execution strategy before submission:
 - do not build a parallel order book,
 - deep-link secondary markets into the exact official Panta market trading page,
-- keep primary quote/build/sign/verify in Panta Signal,
+- treat Panta Email Login + embedded Solana wallet as the native secondary execution path,
+- keep external-wallet primary quote/build/sign/verify in Panta Signal as a complementary integration,
 - only implement direct secondary on-chain execution later if Panta exposes a documented integration surface suitable for third-party apps.
 
 ---
@@ -1238,11 +1239,11 @@ Panta Signal is competition-ready when a judge can open the public URL and, with
 1. understand which Panta markets are actively priced versus untouched/resolved,
 2. open a reliable market workspace,
 3. see real market history and a grounded movement signal,
-4. connect Phantom or inspect a Solana wallet,
-5. create a Panta YES/NO quote,
-6. approve a real Solana transaction,
+4. continue from a signal into the correct Panta-native execution path,
+5. execute a real small secondary trade through Panta's native login/wallet/order book or, when available, a direct primary quote,
+6. approve the real Solana-backed transaction through the relevant wallet flow,
 7. see the transaction on Explorer,
-8. see Panta verify it,
-9. see the portfolio/position state update,
+8. see the public Panta activity / verification state when indexed,
+9. distinguish Panta's existing Intelligence from Panta Signal's real-time signal layer,
 10. understand why this is more than a generic frontend over a REST API.
 
