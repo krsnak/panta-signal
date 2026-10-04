@@ -102,6 +102,9 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
     imageUrl: baseMarket.imageUrl || fallback.image || null,
   };
   const quoteState = signal?.quoteState ?? "unavailable";
+  const marketStatus = resolvedMarket.status.toLowerCase();
+  const marketClosed = ["cancelled", "canceled", "resolved", "closed"].includes(marketStatus);
+  const displayQuoteState = marketClosed ? "resolved" : quoteState;
   const quoteAvailable =
     resolvedMarket.yesProbability !== null && resolvedMarket.noProbability !== null;
   const cachedObservedAt =
@@ -159,17 +162,19 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
             <div className="flex items-center justify-between gap-3">
               <div className="text-xs uppercase tracking-[0.18em] text-white/30">Current market</div>
               <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
-                quoteState === "live"
+                displayQuoteState === "live"
                   ? "bg-emerald-300/10 text-emerald-200"
-                  : quoteState === "cached"
+                  : displayQuoteState === "cached"
                     ? "bg-amber-300/10 text-amber-200"
-                    : quoteState === "resolved"
+                    : displayQuoteState === "resolved"
                       ? "bg-white/10 text-white/55"
                       : "bg-rose-300/10 text-rose-200"
               }`}>
-                {quoteState === "cached" && cachedObservedAt
+                {displayQuoteState === "cached" && cachedObservedAt
                   ? `Cached ${cachedObservedAt}`
-                  : quoteState}
+                  : marketClosed
+                    ? resolvedMarket.status
+                    : displayQuoteState}
               </span>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
@@ -182,9 +187,14 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 <div className="mt-1 text-4xl font-semibold text-rose-200">{pct(resolvedMarket.noProbability)}</div>
               </div>
             </div>
-            {quoteState === "cached" && (
+            {!marketClosed && quoteState === "cached" && (
               <div className="mt-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.05] px-3 py-2.5 text-xs leading-5 text-amber-100/60">
                 Live Panta RPC quote is unavailable. Showing the last successful observation captured at {cachedObservedAt}.
+              </div>
+            )}
+            {marketClosed && (
+              <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2.5 text-xs leading-5 text-white/45">
+                This market is {resolvedMarket.status.toLowerCase()} on Panta. The displayed probabilities are historical context only and are not tradable.
               </div>
             )}
             {!quoteAvailable && (
@@ -195,7 +205,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
             <div className="mt-5 border-t border-white/10 pt-5">
               <PrimaryBuyPanel
                 marketId={resolvedMarket.id}
-                phase={resolvedMarket.phase}
+                phase={marketClosed ? "closed" : resolvedMarket.phase}
                 title={resolvedMarket.title}
               />
             </div>

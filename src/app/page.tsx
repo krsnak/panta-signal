@@ -81,6 +81,7 @@ export default async function Home({ searchParams }: PageProps) {
   const observedIds = new Set(observedMarkets.map((market) => market.id));
   const judgeFacingMarkets = titledMarkets
     .filter((market) => hasExplicitCatalogQuery || !isClearlyTestMarket(market))
+    .filter((market) => !["cancelled", "canceled", "resolved", "closed"].includes(market.status.toLowerCase()))
     .filter((market) => market.phase === "primary" || market.phase === "secondary")
     .sort((a, b) => {
       const score = (market: (typeof titledMarkets)[number]) =>
