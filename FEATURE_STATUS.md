@@ -12,6 +12,16 @@
 - The demo no longer depends on a primary market being available.
 - Direct primary quote/build/sign/submit/verify remains a complementary integration and still requires explicit wallet approval.
 
+## Judge-facing market quality gate — 2026-10-04
+
+- A centralized relevance gate now runs before markets reach the homepage or Signal Feed.
+- Cancelled, resolved, closed and deleted markets are rejected.
+- Only real primary/secondary trading phases are judge-facing.
+- Current Panta registry membership is required for Signal Feed candidates; stale stored observations can no longer resurrect an old market.
+- YES/NO values are only exposed as probabilities when they form a valid complementary pair near 100%.
+- Non-complementary secondary spot prices such as SOL-denominated quotes are no longer mislabeled as probabilities.
+- When the current registry is unavailable, the homepage fails closed rather than filling the judge-facing catalog with stale generic catalog rows.
+
 ## Delivery rule
 
 From 2026-10-02 onward, Panta Signal is developed **one user-facing function at a time**.

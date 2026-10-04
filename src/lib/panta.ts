@@ -5,6 +5,7 @@ import {
   fromSixDecimalBaseUnits,
   hasUsefulDetail,
   normalizeMarket,
+  isRelevantMarket,
   toNumber,
   type CatalogMarket,
   type PantaMarket,
@@ -647,7 +648,7 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
     const batch = registryRows.slice(index, index + 3);
     hydrated.push(...(await Promise.all(batch.map(hydrateEvent))));
   }
-  return hydrated;
+  return hydrated.filter(isRelevantMarket);
 }
 
 export async function getMarketTrades(marketId: string, limit = 50): Promise<PantaTrade[]> {

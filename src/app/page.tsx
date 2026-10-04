@@ -9,6 +9,7 @@ import MarketQuote from "@/components/MarketQuote";
 import PrimarySignalCard from "@/components/PrimarySignalCard";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import { getCanonicalSignalFeed } from "@/lib/signal-service";
+import { isRelevantMarket } from "@/lib/panta-core";
 
 type PageProps = {
   searchParams: Promise<{
@@ -70,8 +71,7 @@ export default async function Home({ searchParams }: PageProps) {
       failedCount: 0,
     })),
   ]);
-  const discoveryMarkets =
-    publicRegistryMarkets.length > 0 ? publicRegistryMarkets : snapshot.markets;
+  const discoveryMarkets = publicRegistryMarkets;
   const titledMarkets = discoveryMarkets.filter(
     (market) =>
       !market.title.startsWith("Market ") &&
@@ -81,8 +81,7 @@ export default async function Home({ searchParams }: PageProps) {
   const observedIds = new Set(observedMarkets.map((market) => market.id));
   const judgeFacingMarkets = titledMarkets
     .filter((market) => hasExplicitCatalogQuery || !isClearlyTestMarket(market))
-    .filter((market) => !["cancelled", "canceled", "resolved", "closed"].includes(market.status.toLowerCase()))
-    .filter((market) => market.phase === "primary" || market.phase === "secondary")
+    .filter(isRelevantMarket)
     .sort((a, b) => {
       const score = (market: (typeof titledMarkets)[number]) =>
         (observedIds.has(market.id) ? 1000 : 0) +
@@ -95,7 +94,7 @@ export default async function Home({ searchParams }: PageProps) {
       ? hasExplicitCatalogQuery
         ? judgeFacingMarkets
         : judgeFacingMarkets.slice(0, 6)
-      : titledMarkets;
+      : [];
   const liveMarkets = visibleMarkets;
   const primarySignalMarket = canonicalFeed.signals[0]?.market ?? null;
 

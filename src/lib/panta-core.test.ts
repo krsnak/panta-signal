@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   errorMessageFromBody,
   fromSixDecimalBaseUnits,
+  hasValidProbabilityPair,
   hasUsefulDetail,
+  isRelevantMarket,
   normalizeMarket,
   normalizeStatus,
   toNumber,
@@ -89,6 +91,21 @@ describe("Panta normalization", () => {
     expect(market.phase).toBe("resolved");
   });
 
+  it("does not present non-complementary spot prices as probabilities", () => {
+    const market = normalizeMarket({
+      marketId: "sol-quoted-secondary",
+      title: "SOL quoted market",
+      phase: "secondary",
+      status: "secondary_active",
+      secondaryYesPrice: "0.5684",
+      secondaryNoPrice: "0.8000",
+      volumeUsdc: "12096.08",
+    });
+
+    expect(market.yesProbability).toBeNull();
+    expect(market.noProbability).toBeNull();
+  });
+
   it("marks incomplete identity with an explicit technical fallback", () => {
     const market = normalizeMarket({ marketId: "DW1G3gChLongId" });
     expect(market.title).toBe("Market DW1G3gCh…");
@@ -136,6 +153,41 @@ describe("Panta helper behavior", () => {
     expect(fromSixDecimalBaseUnits("1933475")).toBe(1.933475);
     expect(fromSixDecimalBaseUnits(50000)).toBe(0.05);
     expect(fromSixDecimalBaseUnits(null)).toBeNull();
+  });
+
+  it("quality-gates probability pairs and judge-facing markets", () => {
+    expect(hasValidProbabilityPair(0.506, 0.494)).toBe(true);
+    expect(hasValidProbabilityPair(0.568, 0.8)).toBe(false);
+
+    expect(
+      isRelevantMarket({
+        id: "live",
+        title: "Will this happen?",
+        description: "",
+        category: "world",
+        phase: "secondary",
+        status: "secondary",
+        yesProbability: 0.52,
+        noProbability: 0.48,
+        volumeUsdc: 10,
+        imageUrl: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isRelevantMarket({
+        id: "cancelled",
+        title: "Cancelled market",
+        description: "",
+        category: "world",
+        phase: "secondary",
+        status: "CANCELLED",
+        yesProbability: 0.52,
+        noProbability: 0.48,
+        volumeUsdc: 10,
+        imageUrl: null,
+      }),
+    ).toBe(false);
   });
 
   it("extracts structured error messages without assuming one envelope", () => {

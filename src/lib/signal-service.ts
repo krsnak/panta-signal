@@ -12,6 +12,7 @@ import {
   getMarketTrades,
   type PantaMarket,
 } from "@/lib/panta";
+import { isRelevantMarket } from "@/lib/panta-core";
 import {
   buildMarketSignal,
   isMeaningfulSignal,
@@ -52,7 +53,7 @@ export async function getCanonicalMarketSignal(
     detail.yesProbability !== null &&
     detail.noProbability !== null;
 
-  if (detail && hasLiveQuote && detail.phase !== "resolved") {
+  if (detail && isRelevantMarket(detail) && hasLiveQuote) {
     await recordMarketSnapshots([detail]);
   }
 
@@ -112,9 +113,14 @@ export async function getCanonicalSignalFeed(options?: {
     getRecentlyObservedMarkets(hours, Math.max(limit * 2, 10)),
     getCurrentPublicRegistryMarkets(20).catch(() => []),
   ]);
+  const currentIds = new Set(currentMarkets.map((market) => market.id));
   const candidates = new Map<string, PantaMarket>();
   for (const market of currentMarkets) candidates.set(market.id, market);
-  for (const market of observed) candidates.set(market.id, market);
+  for (const market of observed) {
+    if (currentIds.has(market.id) && isRelevantMarket(market)) {
+      candidates.set(market.id, market);
+    }
+  }
   const settled = await Promise.allSettled(
     [...candidates.values()].map((market) => getCanonicalMarketSignal(market.id, hours)),
   );
@@ -125,6 +131,7 @@ export async function getCanonicalSignalFeed(options?: {
         result.status === "fulfilled",
     )
     .map((result) => result.value)
+    .filter((signal) => isRelevantMarket(signal.market))
     .filter((signal) => signal.kind !== "resolved")
     .filter((signal) => signal.market.id !== options?.excludeMarketId);
 

@@ -9,6 +9,7 @@ import {
 } from "@/lib/signal-model";
 import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
 import WalletConnectButton from "@/components/WalletConnectButton";
+import { isClosedMarketStatus } from "@/lib/panta-core";
 
 type PageProps = {
   params: Promise<{ marketId: string }>;
@@ -103,7 +104,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   };
   const quoteState = signal?.quoteState ?? "unavailable";
   const marketStatus = resolvedMarket.status.toLowerCase();
-  const marketClosed = ["cancelled", "canceled", "resolved", "closed"].includes(marketStatus);
+  const marketClosed = isClosedMarketStatus(marketStatus);
   const displayQuoteState = marketClosed ? "resolved" : quoteState;
   const quoteAvailable =
     resolvedMarket.yesProbability !== null && resolvedMarket.noProbability !== null;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMarketDetail } from "@/lib/panta";
+import { isClosedMarketStatus, isRelevantMarket } from "@/lib/panta-core";
 import {
   getLatestMarketSnapshot,
   recordMarketSnapshots,
@@ -16,12 +17,12 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const market = await getMarketDetail(decoded);
     const liveQuote =
       market.yesProbability !== null && market.noProbability !== null;
-    if (liveQuote && market.phase !== "resolved") {
+    if (liveQuote && isRelevantMarket(market)) {
       await recordMarketSnapshots([market]);
     }
     const cached = liveQuote ? null : await getLatestMarketSnapshot(decoded, 24);
     const quoteState =
-      market.phase === "resolved"
+      isClosedMarketStatus(market.status) || market.phase === "resolved"
         ? "resolved"
         : liveQuote
           ? "live"

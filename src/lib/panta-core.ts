@@ -28,6 +28,52 @@ export type CatalogMarket = {
   secondaryNoPrice?: string | null;
 };
 
+const CLOSED_MARKET_STATUSES = new Set([
+  "cancelled",
+  "canceled",
+  "resolved",
+  "closed",
+  "deleted",
+]);
+
+export function isClosedMarketStatus(status: string | null | undefined) {
+  return CLOSED_MARKET_STATUSES.has(status?.trim().toLowerCase() || "");
+}
+
+export function isTradingPhase(phase: string | null | undefined) {
+  const value = phase?.trim().toLowerCase();
+  return value === "primary" || value === "secondary";
+}
+
+export function hasValidProbabilityPair(
+  yes: number | null | undefined,
+  no: number | null | undefined,
+  tolerance = 0.02,
+) {
+  if (yes === null || yes === undefined || no === null || no === undefined) return false;
+  if (!Number.isFinite(yes) || !Number.isFinite(no)) return false;
+  if (yes < 0 || yes > 1 || no < 0 || no > 1) return false;
+  return Math.abs(yes + no - 1) <= tolerance;
+}
+
+export function isRelevantMarket(market: PantaMarket) {
+  const title = market.title.trim();
+  if (!title || title.startsWith("Market ") || title.startsWith("Panta market ")) return false;
+  if (isClosedMarketStatus(market.status)) return false;
+  if (!isTradingPhase(market.phase)) return false;
+  return true;
+}
+
+export function sanitizeProbabilityPair(market: PantaMarket): PantaMarket {
+  if (market.yesProbability === null && market.noProbability === null) return market;
+  if (hasValidProbabilityPair(market.yesProbability, market.noProbability)) return market;
+  return {
+    ...market,
+    yesProbability: null,
+    noProbability: null,
+  };
+}
+
 export function toNumber(value: string | number | null | undefined) {
   if (value === null || value === undefined || value === "") return null;
   const parsed = Number(value);
@@ -71,7 +117,7 @@ export function normalizeMarket(row: CatalogMarket, fallback?: CatalogMarket): P
     toNumber(row.primaryNoPrice) ??
     toNumber(row.secondaryNoPrice);
 
-  return {
+  return sanitizeProbabilityPair({
     id: row.marketId,
     title:
       row.title?.trim() ||
@@ -87,7 +133,7 @@ export function normalizeMarket(row: CatalogMarket, fallback?: CatalogMarket): P
     noProbability: no,
     volumeUsdc: toNumber(row.volumeUsdc) ?? toNumber(fallback?.volumeUsdc) ?? 0,
     imageUrl: row.images?.[0] ?? fallback?.images?.[0] ?? null,
-  };
+  });
 }
 
 export function errorMessageFromBody(body: unknown) {
