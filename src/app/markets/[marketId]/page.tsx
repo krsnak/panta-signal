@@ -11,6 +11,7 @@ import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import { isClosedMarketStatus } from "@/lib/panta-core";
 import { PANTA_PROGRAM_ID, readPantaOrderBook } from "@/lib/panta-orderbook";
+import LiveOrderBook from "@/components/LiveOrderBook";
 
 type PageProps = {
   params: Promise<{ marketId: string }>;
@@ -261,6 +262,12 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
             </div>
           </div>
         </section>
+
+        <LiveOrderBook
+          marketId={resolvedMarket.id}
+          phase={resolvedMarket.phase}
+          initialBook={secondaryOrderBook}
+        />
 
         <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
