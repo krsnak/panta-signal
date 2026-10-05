@@ -10,7 +10,6 @@ import {
 import PrimaryBuyPanel from "@/components/PrimaryBuyPanel";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import { isClosedMarketStatus } from "@/lib/panta-core";
-import { PANTA_PROGRAM_ID, readPantaOrderBook } from "@/lib/panta-orderbook";
 import LiveOrderBook from "@/components/LiveOrderBook";
 
 type PageProps = {
@@ -69,8 +68,8 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   const { marketId } = await params;
   const fallback = await searchParams;
   const decodedMarketId = decodeURIComponent(marketId);
-  const signal = await getCanonicalMarketSignal(decodedMarketId).catch(() => null);
-  const [trades, historyPoints] = await Promise.all([
+  const [signal, trades, historyPoints] = await Promise.all([
+    getCanonicalMarketSignal(decodedMarketId).catch(() => null),
     getMarketTrades(decodedMarketId, 20).catch(() => []),
     getMarketHistory(decodedMarketId, 24).catch(() => []),
   ]);
@@ -111,13 +110,6 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
   const displayQuoteState = marketClosed ? "resolved" : quoteState;
   const quoteAvailable =
     resolvedMarket.yesProbability !== null && resolvedMarket.noProbability !== null;
-  const secondaryOrderBook =
-    !marketClosed && resolvedMarket.phase.toLowerCase() === "secondary"
-      ? await readPantaOrderBook(decodedMarketId, {
-          programId: PANTA_PROGRAM_ID,
-          quoteAsset: resolvedMarket.quoteAsset || undefined,
-        }).catch(() => null)
-      : null;
   const cachedObservedAt =
     quoteState === "cached" && signal?.current.observedAt
       ? new Date(signal.current.observedAt).toLocaleTimeString("en-GB", {
@@ -218,20 +210,10 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
                 marketId={resolvedMarket.id}
                 phase={marketClosed ? "closed" : resolvedMarket.phase}
                 title={resolvedMarket.title}
-                quoteAsset={secondaryOrderBook?.quoteAsset ?? resolvedMarket.quoteAsset ?? null}
+                quoteAsset={resolvedMarket.quoteAsset ?? null}
                 recentSecondaryFills={recentSecondaryFills}
                 primaryStartTime={resolvedMarket.startTime ?? null}
-                secondaryLiquidity={
-                  resolvedMarket.phase.toLowerCase() === "secondary"
-                    ? secondaryOrderBook
-                      ? {
-                          activeOrders: secondaryOrderBook.counts.activeOrders,
-                          buyOpportunities: secondaryOrderBook.counts.buyOpportunities,
-                          sellOpportunities: secondaryOrderBook.counts.sellOpportunities,
-                        }
-                      : null
-                    : null
-                }
+                secondaryLiquidity={null}
               />
             </div>
           </aside>
@@ -266,7 +248,7 @@ export default async function MarketDetailPage({ params, searchParams }: PagePro
         <LiveOrderBook
           marketId={resolvedMarket.id}
           phase={resolvedMarket.phase}
-          initialBook={secondaryOrderBook}
+          initialBook={null}
         />
 
         <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.035] p-6">

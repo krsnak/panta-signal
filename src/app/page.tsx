@@ -8,13 +8,7 @@ import {
 import MarketQuote from "@/components/MarketQuote";
 import PrimarySignalCard from "@/components/PrimarySignalCard";
 import WalletConnectButton from "@/components/WalletConnectButton";
-import { getCanonicalSignalFeed } from "@/lib/signal-service";
 import { isRelevantMarket } from "@/lib/panta-core";
-import {
-  PANTA_PROGRAM_ID,
-  readPantaOrderBook,
-  type PantaOrderBook,
-} from "@/lib/panta-orderbook";
 
 type PageProps = {
   searchParams: Promise<{
@@ -59,41 +53,17 @@ function isClearlyTestMarket(market: { id: string; title: string; description: s
   );
 }
 
-function bestOpportunity(orderBook: PantaOrderBook, action: "buy" | "sell") {
-  const candidates = [
-    orderBook.best[action].yes,
-    orderBook.best[action].no,
-  ].filter((row): row is NonNullable<typeof row> => row !== null);
-
-  return candidates.sort((left, right) => {
-    const leftPrice = Number(left.price);
-    const rightPrice = Number(right.price);
-    return action === "buy" ? leftPrice - rightPrice : rightPrice - leftPrice;
-  })[0] ?? null;
-}
-
-function formatOrderPrice(value: string) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return value;
-  return numeric.toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
-}
-
 export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
-  const snapshot = await getMarketSnapshot({
-    query: params.q,
-    category: params.category,
-    limit: 20,
-  });
-  const [signalCoverage, observedMarkets, publicRegistryMarkets, canonicalFeed] = await Promise.all([
+  const [snapshot, signalCoverage, observedMarkets, publicRegistryMarkets] = await Promise.all([
+    getMarketSnapshot({
+      query: params.q,
+      category: params.category,
+      limit: 20,
+    }),
     getSignalCoverage(),
     getRecentlyObservedMarkets(),
-    getCurrentPublicRegistryMarkets(20).catch(() => []),
-    getCanonicalSignalFeed({ hours: 24, limit: 3 }).catch(() => ({
-      signals: [],
-      observedCount: 0,
-      failedCount: 0,
-    })),
+    getCurrentPublicRegistryMarkets(20, { hydrateDetails: false }).catch(() => []),
   ]);
   const discoveryMarkets = publicRegistryMarkets;
   const titledMarkets = discoveryMarkets.filter(
@@ -113,29 +83,7 @@ export default async function Home({ searchParams }: PageProps) {
         Math.min(market.volumeUsdc, 1000);
       return score(b) - score(a);
     });
-  const secondaryLiquidityResults = await Promise.all(
-    judgeFacingMarkets.map(async (market) => {
-      if (market.phase.toLowerCase() !== "secondary") return [market.id, null] as const;
-      const orderBook = await readPantaOrderBook(market.id, {
-        programId: PANTA_PROGRAM_ID,
-        quoteAsset: market.quoteAsset || undefined,
-      }).catch(() => null);
-      return [market.id, orderBook] as const;
-    }),
-  );
-  const secondaryLiquidity = new Map(secondaryLiquidityResults);
   const rankedMarkets = [...judgeFacingMarkets].sort((a, b) => {
-    const liquidityRank = (market: (typeof judgeFacingMarkets)[number]) => {
-      const phase = market.phase.toLowerCase();
-      const orderBook = secondaryLiquidity.get(market.id);
-      if (phase === "secondary" && (orderBook?.counts.activeOrders ?? 0) > 0) return 3;
-      if (phase === "primary") return 2;
-      if (phase === "secondary" && orderBook !== null) return 1;
-      return 0;
-    };
-    const rankDelta = liquidityRank(b) - liquidityRank(a);
-    if (rankDelta !== 0) return rankDelta;
-
     const activityScore = (market: (typeof judgeFacingMarkets)[number]) =>
       (observedIds.has(market.id) ? 1000 : 0) +
       (market.yesProbability !== null && market.noProbability !== null ? 100 : 0) +
@@ -148,7 +96,7 @@ export default async function Home({ searchParams }: PageProps) {
         ? rankedMarkets
         : rankedMarkets.slice(0, 6)
       : [];
-  const primarySignalMarket = canonicalFeed.signals[0]?.market ?? null;
+  const primarySignalMarket = rankedMarkets[0] ?? null;
 
   return (
     <main className="min-h-screen bg-[#090d10] text-white">
@@ -282,7 +230,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <div className="text-xs uppercase tracking-[0.18em] text-white/30">Current registry</div>
                 <h2 className="mt-2 text-xl font-semibold">Current Panta markets</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-white/40">
-                  Current Panta markets ranked by immediate tradability first. Secondary liquidity comes directly from live Solana OrderNode accounts, while recent fills remain a separate activity signal.
+                  Current Panta markets load from the public registry first. Live quotes and on-chain secondary liquidity refresh independently so navigation is not blocked by Solana RPC.
                 </p>
               </div>
               <span className="text-xs text-white/25">
@@ -292,10 +240,6 @@ export default async function Home({ searchParams }: PageProps) {
 
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {liveMarkets.map((market) => {
-                const orderBook = secondaryLiquidity.get(market.id);
-                const bestBuy = orderBook ? bestOpportunity(orderBook, "buy") : null;
-                const bestSell = orderBook ? bestOpportunity(orderBook, "sell") : null;
-
                 return (
                   <Link
                     key={market.id}
@@ -321,18 +265,8 @@ export default async function Home({ searchParams }: PageProps) {
                         {market.category}
                       </span>
                       {market.phase.toLowerCase() === "secondary" && (
-                        <span className={`absolute right-4 top-4 rounded-full border px-2.5 py-1 text-[11px] font-semibold backdrop-blur ${
-                          orderBook === null
-                            ? "border-white/10 bg-black/55 text-white/45"
-                            : (orderBook?.counts.activeOrders ?? 0) > 0
-                              ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100"
-                              : "border-amber-300/20 bg-amber-300/10 text-amber-100/80"
-                        }`}>
-                          {orderBook === null
-                            ? "Liquidity unavailable"
-                            : (orderBook?.counts.activeOrders ?? 0) > 0
-                              ? `Tradeable now · ${orderBook?.counts.activeOrders} orders`
-                              : "No immediate liquidity"}
+                        <span className="absolute right-4 top-4 rounded-full border border-cyan-300/15 bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-cyan-100/70 backdrop-blur">
+                          Secondary · live book on detail
                         </span>
                       )}
                       {market.phase.toLowerCase() === "primary" && (
@@ -356,25 +290,6 @@ export default async function Home({ searchParams }: PageProps) {
                           }}
                         />
                       </div>
-                      {orderBook && orderBook.counts.activeOrders > 0 && (
-                        <div className="mt-4 border-t border-white/8 pt-3">
-                          <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/30">
-                            Best live orders
-                          </div>
-                          <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                            {bestBuy && (
-                              <span className="rounded-lg border border-emerald-300/15 bg-emerald-300/[0.06] px-2.5 py-1.5 text-emerald-100/80">
-                                Buy {bestBuy.outcome.toUpperCase()} · {formatOrderPrice(bestBuy.price)} {bestBuy.quoteAsset}
-                              </span>
-                            )}
-                            {bestSell && (
-                              <span className="rounded-lg border border-rose-300/15 bg-rose-300/[0.06] px-2.5 py-1.5 text-rose-100/80">
-                                Sell {bestSell.outcome.toUpperCase()} · {formatOrderPrice(bestSell.price)} {bestSell.quoteAsset}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </Link>
                 );

@@ -589,7 +589,10 @@ export async function getFullMarketCatalog(options?: {
     .map((market) => normalizeMarket(market, market));
 }
 
-export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<PantaMarket[]> {
+export async function getCurrentPublicRegistryMarkets(
+  limit = 20,
+  options?: { hydrateDetails?: boolean },
+): Promise<PantaMarket[]> {
   const response = await fetch(PUBLIC_REGISTRY_URL, {
     headers: { Accept: "application/json" },
     next: { revalidate: 30 },
@@ -626,10 +629,11 @@ export async function getCurrentPublicRegistryMarkets(limit = 20): Promise<Panta
     .slice(0, Math.min(Math.max(limit, 1), 30));
 
   const isTestEnvironment = getConfig().apiKey?.startsWith("pk_test_") === true;
+  const hydrateDetails = options?.hydrateDetails ?? true;
 
   const hydrateEvent = async (event: PublicRegistryEvent) => {
       const id = event.eventPda!.trim();
-      if (!isTestEnvironment) {
+      if (!isTestEnvironment && hydrateDetails) {
         for (let attempt = 0; attempt < 3; attempt += 1) {
           try {
             const detail = await getMarketDetail(id);

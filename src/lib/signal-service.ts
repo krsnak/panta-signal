@@ -112,7 +112,7 @@ export async function getCanonicalSignalFeed(options?: {
   const limit = Math.min(Math.max(options?.limit ?? 6, 1), 10);
   const [observed, currentMarkets] = await Promise.all([
     getRecentlyObservedMarkets(hours, Math.max(limit * 2, 10)),
-    getCurrentPublicRegistryMarkets(20).catch(() => []),
+    getCurrentPublicRegistryMarkets(20, { hydrateDetails: false }).catch(() => []),
   ]);
   const currentIds = new Set(currentMarkets.map((market) => market.id));
   const candidates = new Map<string, PantaMarket>();
